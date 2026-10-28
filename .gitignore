@@ -1,0 +1,9 @@
+/build/
+/bin/
+*.o
+*.a
+*.out
+*.exe
+*.pyc
+__pycache__/
+.DS_Store

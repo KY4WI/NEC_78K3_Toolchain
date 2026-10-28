@@ -1,0 +1,23 @@
+NEC 78K/3 BACKEND ADDITIONS -- NONCOMMERCIAL PERMISSION
+
+Copyright (c) 2026 Dave (KY4WI).
+
+Permission is granted to use, copy, modify and redistribute the
+independently authored NEC 78K/3 backend additions in this repository,
+in source or binary form, for non-commercial purposes, provided that
+source distributions retain this copyright notice and source-code
+attribution to Dave (KY4WI).
+
+No special attribution in binary output, application screens, or
+promotional materials is required.
+
+This grant applies only to material for which the contributor has
+the necessary rights. It does not relicense any original vbcc, vasm
+or vlink source, original template material, or the upstream source
+excerpts appearing in a patch. The original upstream licenses and
+restrictions continue to apply in addition to this permission.
+
+THE ADDITIONS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE OR NONINFRINGEMENT. IN NO EVENT SHALL THE
+CONTRIBUTOR BE LIABLE FOR ANY CLAIM OR DAMAGES ARISING FROM THEIR USE.

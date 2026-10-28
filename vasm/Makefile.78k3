@@ -1,0 +1,14 @@
+# NEC 78K/3 vasm backend build (GCC / ISO C99).
+# This is an ADDITIONAL Makefile. Upstream Makefile and make.rules are untouched.
+# The shared opcode headers use standard C99 syntax (no binary literals).
+# Usage: make -f Makefile.78k3 CPU=78k3 SYNTAX=std
+CC = gcc
+TARGET =
+TARGETEXTENSION =
+CCOUT = -o $(DUMMY)
+CFLAGS = -c -std=c99 -g -Wno-long-long -DUNIX $(OUTFMTS)
+LD = $(CC)
+LDOUT = $(CCOUT)
+LDFLAGS = -lm
+RM = rm -f
+include make.rules
