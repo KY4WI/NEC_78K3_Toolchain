@@ -6,7 +6,7 @@ TK-x4x radios (NEC µPD78312A) on real hardware. The images named below
 (`phase1`, `selftest`, `panelprobe`) are in the
 [Kenwood_TK-x4x_Reverse_Engineering](https://github.com/KY4WI/Kenwood_TK-x4x_Reverse_Engineering)
 repository, `tools/probes/`; regression tests are in
-[NEC_78KIII_Emulator](https://github.com/KY4WI/NEC_78KIII_Emulator),
+[NEC_78K3_Emulator](https://github.com/KY4WI/NEC_78K3_Emulator),
 `tests/`. Each entry is proven by direct inspection of the
 generated assembly, not inferred from symptoms alone -- the same evidence
 bar as every other finding in this project. Until a bug is actually fixed
@@ -244,7 +244,7 @@ generated IC sequences, not assumed.
 
 ### Follow-ups
 
-- **Done:** the regression test `t_unsigned_cmp` (NEC_78KIII_Emulator)
+- **Done:** the regression test `t_unsigned_cmp` (NEC_78K3_Emulator)
   uses values on both sides of `0x80`/`0x8000` under every unsigned
   relational operator, so this bug can't come back unnoticed.
 - **Open, panelprobe only: whether to simplify `panel_test_b3_subcode()`'s
@@ -266,7 +266,7 @@ field is not set, so the value came from leftover heap contents, and
 the output changed with the build directory. In `selftest` it made the
 PLL code's `n >> 4` compile to 0.
 
-**Fixed** in KY4WI/vbcc `4069a17`: constants are read through
+**Fixed** in an earlier vbcc 78K/III backend revision (`4069a17`): constants are read through
 `eval_const()`, which uses the field that matches the type.
 
 ## Bug #3: the address of a static object read as its contents (fixed 2026-10-16)
@@ -304,11 +304,11 @@ string literal went through a loop, so the loop took the blame.
 `benchtest` (assembly) settled it: both its loop and the mask ROM's
 unrolled routine displayed correctly.
 
-**Fixed** in KY4WI/vbcc `2945d2e`: a `VARADR` operand is loaded as
+**Fixed** in an earlier vbcc 78K/III backend revision (`2945d2e`): a `VARADR` operand is loaded as
 `movw ax,#label`; initialized data (pointer tables) gets the bare
 label; and an internal error stops the compiler if one ever reaches
 the memory-read path again. Regression tests `t_textloop` and
-`t_varadr` in KY4WI/NEC_78KIII_Emulator fail with `4069a17` and pass
+`t_varadr` in [NEC_78K3_Emulator](https://github.com/KY4WI/NEC_78K3_Emulator) fail with `4069a17` and pass
 with `2945d2e`.
 
 **Images.** `selftest` and phase1 are rebuilt with the fix. phase1's

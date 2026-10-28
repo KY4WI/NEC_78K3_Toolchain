@@ -40,4 +40,4 @@ test is implied by `make test`.
 
 For meaningful verification, compare emitted bytes against the NEC 78K/III instruction reference and independently known-good instruction encodings, then test calling conventions, signed/unsigned arithmetic, pointer accesses, stack frames, branches, and function arguments. Validate hardware-specific memory maps and linker scripts separately.
 
-If you find a bug, [open an issue](https://github.com/KY4WI/NEC-78K3-Toolchain/issues) with a short reproducible input and expected/actual results. Do not upload copyrighted Kenwood firmware.
+If you find a bug, [open an issue](https://github.com/KY4WI/NEC_78K3_Toolchain/issues) with a short reproducible input and expected/actual results. Do not upload copyrighted Kenwood firmware.

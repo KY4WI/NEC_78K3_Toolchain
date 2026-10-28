@@ -3,7 +3,7 @@
 **NEC 78K/III compiler and assembler backends for vbcc and vasm**, with the original vlink linker. Intended for software development targeting the NEC 78K/III microcontroller family, including the µPD78312.
 
 > [!WARNING]
-> **Experimental / under development.** This is not a finished or fully validated C toolchain. The vbcc backend generates code, but features, code generation and ABI behavior still need testing. **Inspect and verify generated code before using it on real hardware.** If you encounter a problem, please [file a bug report](https://github.com/KY4WI/NEC-78K3-Toolchain/issues) with a minimal reproducible example.
+> **Experimental / under development.** This is not a finished or fully validated C toolchain. The vbcc backend generates code, but features, code generation and ABI behavior still need testing. **Inspect and verify generated code before using it on real hardware.** If you encounter a problem, please [file a bug report](https://github.com/KY4WI/NEC_78K3_Toolchain/issues) with a minimal reproducible example.
 
 ## What this repository contains
 
@@ -36,8 +36,8 @@ You need Bash, GCC, GNU Make, `patch`, `tar`, and standard Unix utilities.
 1. Clone the repository and enter its directory:
 
 ```sh
-git clone https://github.com/KY4WI/NEC-78K3-Toolchain.git
-cd NEC-78K3-Toolchain
+git clone https://github.com/KY4WI/NEC_78K3_Toolchain.git
+cd NEC_78K3_Toolchain
 ```
 
 2. Build the complete toolchain (the original upstream archives are already included):
@@ -69,7 +69,7 @@ The 78K/3 backends have been used to generate code, but are not feature-complete
 
 The assembler instruction tables under `vasm/cpus/78k3/shared/` are self-contained copies synchronized with the separate reverse-engineering/disassembler project. No access to that project is required to build this repository.
 
-**Please report bugs.** Open an [issue](https://github.com/KY4WI/NEC-78K3-Toolchain/issues), including source input, the command line, expected behavior, actual output or diagnostic, host OS, and versions/checksums of the three upstream archives. A short failing case is more useful than a full firmware dump. Please **do not attach copyrighted Kenwood firmware or ROM images**.
+**Please report bugs.** Open an [issue](https://github.com/KY4WI/NEC_78K3_Toolchain/issues), including source input, the command line, expected behavior, actual output or diagnostic, host OS, and versions/checksums of the three upstream archives. A short failing case is more useful than a full firmware dump. Please **do not attach copyrighted Kenwood firmware or ROM images**.
 
 ## Original projects and permissions
 
