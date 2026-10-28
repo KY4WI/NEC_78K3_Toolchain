@@ -2213,7 +2213,7 @@ static void gen_word_bitwise(FILE *f,struct IC *p,int t,const char *mn)
       divide directly. Verified by actually EXECUTING the generated
       assembly (at the time there was no emulator, so a small, scoped
       instruction-level simulator was written for it and not kept;
-      the NEC_78KIII_Emulator repository does this job now) -- covering
+      the NEC_78K3_Emulator repository does this job now) -- covering
       every sign combination,
       exact division, dividend 0, divisor +-1, and INT_MIN/CHAR_MIN
       edge cases, byte and word, signed and unsigned).
