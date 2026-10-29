@@ -75,6 +75,12 @@ The assembler instruction tables under `vasm/cpus/78k3/shared/` are self-contain
 
 vbcc, vasm and vlink are separate tools developed by Volker Barthelmann and Frank Wille. They are **not MIT/GPL open-source projects simply because their source is available**. Their original licenses continue to apply. Original archives must be unmodified; this repository distributes separate backend additions and one explicit patch. See [UPSTREAM.md](UPSTREAM.md) and [LICENSE-78K3.txt](LICENSE-78K3.txt).
 
-This project was developed with substantial **AI assistance**, including implementation, investigation, analysis and debugging. That fact does not substitute for independent testing or review.
-
 **Backend contributions:** Dave (KY4WI). Source-code attribution is appreciated; no prominent binary or marketing credit is requested.
+
+## AI Assistance
+
+AI tools were used to assist with the development of this project, including code, research, and documentation. However, that should not be mistaken for AI doing all the work. I established the goals, directed the development, made the design decisions, and spent considerable time reviewing, testing, correcting, and refining the results.
+
+AI can be an incredibly useful tool, but getting good results requires technical knowledge, persistence, and a great deal of hands-on work. Sometimes working with AI feels like typing with boxing gloves on.
+
+This is very much my work, developed with the assistance of AI, not a project independently created by it.
