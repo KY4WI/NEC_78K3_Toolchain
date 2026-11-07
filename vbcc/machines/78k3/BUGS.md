@@ -362,3 +362,18 @@ hardware-communication notes, 2026-09-27):
   `CCW` `TPF` is set), so the fragment's `0x40` origins need changing for
   that target.
 
+- **No register variables yet (all registers reserved).** `init_cg()` marks
+  every register `regsa[i]=1`, so vbcc's allocator never keeps a variable or
+  temporary in `A`..`H` and the frontend uses stack slots for everything
+  (hence `-O=287` for probes, and the small stack budget of `main()`). This
+  was the first-bring-up fix for a real miscompile: the code generator uses
+  `A`/`X`, `C`, `DE` and `HL` as scratch inside a single IC (every memory
+  access goes through `A`; pointer accesses through `DE`/`HL`; the divide
+  helpers use `BC`), so a value the allocator left parked there across ICs
+  was overwritten. Planned fix, in order: (1) list exactly which registers
+  each IC's code uses (the scratch footprint), (2) free the pair(s) the
+  generator never touches, starting with the least used, as allocatable
+  callee-saved registers (saved with the existing `push {..}`/`pop {..}`
+  prologue/epilogue), (3) set `regscratch`/`regsa` per register accordingly,
+  (4) re-run the probes and the bench images and compare the generated
+  code. Not started.
