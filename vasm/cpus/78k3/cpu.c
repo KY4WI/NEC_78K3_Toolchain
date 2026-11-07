@@ -61,9 +61,12 @@
  * "bt saddr_expr,label,bit_expr") or attached to CY ("mov1 cy.3,0xfe30",
  * "andi1 cy.3,0xfe30"). NEC's own form, the bit after the byte it belongs
  * to ("set1 flags.3", "bt flags.3,label", "mov1 cy,flags.3",
- * "and1 cy,/flags.3"), is accepted too: cpu_fixup_bit_syntax() rewrites
- * it into the row form before the operands are matched. Both range-check
- * to 0-7 at encode time. See parse_operand()'s OT_CY_BIT comment.
+ * "and1 cy,/flags.3"), is accepted too, entirely inside this backend:
+ * the byte operand's slot in mnemonics[] carries OTF_BITSFX (otflags.h), so
+ * parse_operand() splits off the ".bit", keeps it in operand.bit, and
+ * resolve_bit_operands() moves it into the bit-number operand just before
+ * encoding. Both range-check to 0-7 at encode time. See parse_operand()'s
+ * OT_CY_BIT comment.
  */
 
 #include "vasm.h"
@@ -75,6 +78,7 @@
 #include "shared/Opcodes.h"
 #include "shared/Addressing.h"
 #include "shared/RegisterNames.h"
+#include "otflags.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -100,6 +104,7 @@ operand *new_operand(void)
   op->type = -2;  /* unset */
   op->reg = 0;
   op->val = NULL;
+  op->bit = NULL;
   return op;
 }
 
@@ -271,7 +276,7 @@ static expr *parse_addr_expr(char *p, int tlen, section *sec, taddr pc,
   return tree;    /* genuine (probably forward-referenced) unresolved label */
 }
 
-int parse_operand(char *p, int len, operand *op, int requires)
+static int parse_operand_base(char *p, int len, operand *op, int requires)
 {
   char *orig = p;
   int tlen;
@@ -578,7 +583,16 @@ int parse_operand(char *p, int len, operand *op, int requires)
   if (requires == OT_CY_BIT) {
     expr *tree;
     int dot;
-    if (tlen < 4 || cistrncmp(p, "cy", 2) != 0 || p[2] != '.')
+    if (tlen < 2 || cistrncmp(p, "cy", 2) != 0)
+      return PO_NOMATCH;
+    if (tlen == 2) {
+      /* plain "cy": NEC's form, the bit follows the other operand
+       * ("mov1 cy,flags.3"); resolve_bit_operands() fills it in */
+      op->type = requires;
+      op->val = NULL;
+      return PO_MATCH;
+    }
+    if (tlen < 4 || p[2] != '.')
       return PO_NOMATCH;
     dot = 2;
     tree = parse_expr_full(p + dot + 1, tlen - dot - 1);
@@ -795,6 +809,111 @@ int parse_operand(char *p, int len, operand *op, int requires)
   return PO_NOMATCH;
 }
 
+/* Where the last dot (outside brackets, parentheses and quotes) of an
+ * operand splits the byte from its bit number: "flags.3", "sfr[PSW].7",
+ * "(flags+1).2". Returns the index of the dot, or -1 if there is no dot or
+ * nothing before or after it. A name with a dot in it (".loop" has nothing
+ * before the dot, so it is fine) can't be the byte operand of a bit
+ * instruction written this way. */
+static int bit_split(const char *p, int len)
+{
+  int i, depth = 0, last = -1;
+  char q = 0;
+  for (i = 0; i < len; i++) {
+    char c = p[i];
+    if (q) {
+      if (c == '\\' && i + 1 < len) i++;
+      else if (c == q) q = 0;
+      continue;
+    }
+    if (c == '"' || (c == '\'' && !(i > 0 && isalpha((unsigned char)p[i - 1]))))
+      q = c;
+    else if (c == '(' || c == '[' || c == '{') depth++;
+    else if (c == ')' || c == ']' || c == '}') depth--;
+    else if (c == '.' && depth == 0) last = i;
+  }
+  /* something before the dot and something after it */
+  if (last <= 0 || last >= len - 1)
+    return -1;
+  for (i = 0; i < last && isspace((unsigned char)p[i]); i++)
+    ;
+  return i < last ? last : -1;
+}
+
+/* Whether the text is, as a whole, the name of a symbol that already
+ * exists, so that its dot is part of the name and not a bit separator. */
+static int is_known_symbol(const char *p, int len)
+{
+  char name[128];
+  int i;
+  if (len <= 0 || len >= (int)sizeof(name))
+    return 0;
+  for (i = 0; i < len; i++) {
+    unsigned char ch = (unsigned char)p[i];
+    if (!isalnum(ch) && ch != '_' && ch != '.' && ch != '$')
+      return 0;
+    name[i] = (char)ch;
+  }
+  name[len] = '\0';
+  return find_symbol(name) != NULL;
+}
+
+/* parse_operand() as vasm calls it. Bit instructions give the byte
+ * operand's slot in mnemonics[] the OTF_BITSFX flag (otflags.h): that
+ * operand may then end in ".bit", NEC's way of naming the bit ("set1
+ * flags.3", "bt flags.3,label", "mov1 cy,flags.3"). The bit expression is
+ * parked in op->bit and the rest is parsed as the plain type;
+ * resolve_bit_operands() hands the bit to the bit-number operand before the
+ * instruction is encoded. OTF_SLASH ("and1 cy,/flags.3") additionally
+ * requires, and removes, a leading '/'. Operands without the flags are
+ * parsed exactly as before. */
+int parse_operand(char *p, int len, operand *op, int requires)
+{
+  static char bytebuf[256];
+  int flags, rc, split, tlen;
+  expr *bit = NULL;
+  char *orig = p;
+
+  if (requires < 0 || !(requires & OTF_MASK))
+    return parse_operand_base(p, len, op, requires);
+
+  flags = requires & OTF_MASK;
+  requires &= ~OTF_MASK;
+  p = skip(p);
+  tlen = trimmed_len(p, len - (int)(p - orig));
+
+  if (flags & OTF_SLASH) {
+    if (tlen < 1 || p[0] != '/')
+      return PO_NOMATCH;
+    p = skip(p + 1);
+    tlen = trimmed_len(p, len - (int)(p - orig));
+  }
+
+  split = bit_split(p, tlen);
+  if (split >= 0 && is_known_symbol(p, tlen))
+    split = -1;   /* "set1 my.flag,3": the dot is part of a name */
+  if (split >= 0) {
+    int resolved;
+    taddr val;
+    if (split >= (int)sizeof(bytebuf))
+      return PO_NOMATCH;
+    bit = parse_addr_expr(p + split + 1, tlen - split - 1, NULL, 0, &resolved, &val);
+    if (!bit)
+      return PO_NOMATCH;
+    /* the expression parser reads a name to its end, and the dot is part
+     * of names: the byte operand gets a terminated copy of its own */
+    memcpy(bytebuf, p, (size_t)split);
+    bytebuf[split] = '\0';
+    p = bytebuf;
+    tlen = trimmed_len(p, split);
+  }
+
+  rc = parse_operand_base(p, tlen, op, requires);
+  if (rc == PO_MATCH)
+    op->bit = bit;
+  return rc;
+}
+
 /* ================= encoding ================= */
 
 /* Write `val`'s low bits into outbytes[byteOffset] at the given
@@ -879,6 +998,8 @@ static int encode_operand(operand *p, const Operand *od, byte *outbytes,
 
   if (!p || od->opType == OT_NONE)
     return 0;
+  if (!p->val && (od->opType == OT_N_BIT || od->opType == OT_CY_BIT))
+    return 1;  /* no bit number: resolve_bit_operands() already said so */
 
   /* fixed-keyword and register-table operands just contribute their
    * (already-parsed) register/field number */
@@ -1485,6 +1606,61 @@ size_t instruction_size(instruction *ip, section *sec, taddr pc)
   return (size_t)short_total;
 }
 
+/* vasm's OPERAND_OPTIONAL hook (cpu.h): a bit instruction's bit-number
+ * operand may be left out when the bit is written on the byte operand
+ * instead ("set1 flags.3" against the row "set1 saddr,n_bit"). */
+int cpu78k3_operand_optional(operand *p, int type)
+{
+  (void)p;
+  return type == OT_N_BIT;
+}
+
+/* Give a bit instruction its bit number. The row's bit-number operand
+ * (OT_N_BIT, or OT_CY_BIT for the CY-paired instructions) was either
+ * written as an operand of its own ("set1 flags,3", "mov1 cy.3,flags"), or
+ * left to the NEC form, where the bit sits on the byte operand ("set1
+ * flags.3", "mov1 cy,flags.3") and was parked in that operand's `bit` by
+ * parse_operand(). Moves the latter into the former, once; the move is
+ * idempotent because vasm evaluates an instruction on every pass. Returns
+ * non-zero (after reporting the error) if there is no bit, or two. */
+static int resolve_bit_operands(instruction *ip)
+{
+  const Opcode *o = opcode_for(ip);
+  const Operand *ods[3];
+  operand *pb = NULL;
+  expr *sib = NULL;
+  int k, kb = -1;
+
+  ods[0] = &o->operand1;
+  ods[1] = &o->operand2;
+  ods[2] = &o->operand3;
+  for (k = 0; k < 3; k++)
+    if (ods[k]->opType == OT_N_BIT || ods[k]->opType == OT_CY_BIT)
+      kb = k;
+  if (kb < 0 || !ip->op[kb])
+    return 0;
+  pb = ip->op[kb];
+  for (k = 0; k < 3; k++) {
+    if (k != kb && ip->op[k] && ip->op[k]->bit) {
+      sib = ip->op[k]->bit;
+      ip->op[k]->bit = NULL;
+    }
+  }
+  if (pb->val && sib) {
+    cpu_error(13);
+    return 1;
+  }
+  if (!pb->val && !sib) {
+    cpu_error(12);
+    return 1;
+  }
+  if (sib) {
+    pb->val = sib;
+    pb->type = ods[kb]->opType;
+  }
+  return 0;
+}
+
 dblock *eval_instruction(instruction *ip, section *sec, taddr pc)
 {
   const Opcode *o = br_row_for_pass(ip, opcode_for(ip), sec, pc);
@@ -1499,6 +1675,8 @@ dblock *eval_instruction(instruction *ip, section *sec, taddr pc)
   db->size = total;
   db->data = mymalloc((size_t)total);
   memset(outbytes, 0, sizeof(outbytes));
+
+  resolve_bit_operands(ip);
 
   if (relax) {
     /* find_relax_rows() re-derives exactly what cbranch_needs_relax()
@@ -1652,134 +1830,6 @@ dblock *eval_data(operand *op, size_t bitsize, section *sec, taddr pc)
 }
 
 /* ================= misc required entry points ================= */
-
-/* NEC writes a bit operand as the byte it lives in, a dot, and the bit
- * number: "set1 flags.3", "bt flags.3,label", "mov1 cy,flags.3",
- * "mov1 flags.3,cy", "and1 cy,/flags.3". This backend's opcode rows carry
- * the bit as an operand of its own ("set1 flags,3", "bt flags,label,3") or
- * attached to CY ("mov1 cy.3,flags", "andi1 cy.3,flags"), so the NEC form
- * is rewritten into that form here, before the operands are matched, and
- * everything after works as before. Both forms are accepted.
- *
- * Only the operand that carries the bit is looked at (the first, or the
- * second when the first is CY), and it is split at its last dot outside
- * brackets, parentheses and quotes; what follows is the bit number, a
- * number or any expression. A name containing a dot (a local label such as
- * ".loop" is fine, it has nothing before the dot) can't be the byte operand
- * in this form. The rewrite only happens when the operand count is the NEC
- * one, so text already in this backend's form is never touched. */
-static int bit_split(const char *p, int len)
-{
-  int i, depth = 0, last = -1;
-  char q = 0;
-  for (i = 0; i < len; i++) {
-    char c = p[i];
-    if (q) {
-      if (c == '\\' && i + 1 < len) i++;
-      else if (c == q) q = 0;
-      continue;
-    }
-    if (c == '"' || (c == '\'' && !(i > 0 && isalpha((unsigned char)p[i - 1]))))
-      q = c;
-    else if (c == '(' || c == '[' || c == '{') depth++;
-    else if (c == ')' || c == ']' || c == '}') depth--;
-    else if (c == '.' && depth == 0) last = i;
-  }
-  /* something before the dot and something after it */
-  if (last <= 0 || last >= len - 1)
-    return -1;
-  for (i = 0; i < last && isspace((unsigned char)p[i]); i++)
-    ;
-  return i < last ? last : -1;
-}
-
-static int is_cy(const char *p, int len)
-{
-  while (len > 0 && isspace((unsigned char)*p)) { p++; len--; }
-  while (len > 0 && isspace((unsigned char)p[len - 1])) len--;
-  return len == 2 && tolower((unsigned char)p[0]) == 'c' && tolower((unsigned char)p[1]) == 'y';
-}
-
-void cpu_fixup_bit_syntax(char **inst, int *inst_len, char **op, int *op_len, int *op_cnt)
-{
-  /* NEC operand count for each bit mnemonic (non-CY forms) */
-  static const struct { const char *name; int nec; } bitm[] = {
-    {"set1",1}, {"clr1",1}, {"not1",1}, {"bt",2}, {"bf",2}, {"btclr",2},
-    {"bfset",2}, {"mov1",2}, {"and1",2}, {"or1",2}, {"xor1",2}
-  };
-  static char bitbuf[256], cybuf[260], mnbuf[8], abuf[256];
-  char mn[8];
-  int i, k, cy, split, inv = 0;
-  char *a;
-  int alen;
-
-  if (*inst_len <= 0 || *inst_len >= (int)sizeof(mn))
-    return;
-  for (i = 0; i < *inst_len; i++)
-    mn[i] = (char)tolower((unsigned char)(*inst)[i]);
-  mn[i] = '\0';
-  for (k = 0; k < (int)(sizeof(bitm) / sizeof(bitm[0])); k++)
-    if (strcmp(mn, bitm[k].name) == 0)
-      break;
-  if (k == (int)(sizeof(bitm) / sizeof(bitm[0])) || *op_cnt < 1)
-    return;
-
-  /* which operand carries the bit, and is the other one CY? */
-  cy = -1;
-  i = 0;
-  if (*op_cnt == 2 && is_cy(op[0], op_len[0])) { cy = 0; i = 1; }
-  else if (*op_cnt == 2 && is_cy(op[1], op_len[1])) cy = 1;
-  if (cy < 0 && (*op_cnt != bitm[k].nec || mn[0] == 'm' || mn[0] == 'a' || mn[0] == 'o' || mn[0] == 'x'))
-    return;   /* already in this backend's form (mov1/and1/or1/xor1 always pair with CY) */
-  split = bit_split(op[i], op_len[i]);
-  if (split < 0 || split - 0 >= (int)sizeof(bitbuf) || op_len[i] - split - 1 >= (int)sizeof(bitbuf))
-    return;
-
-  a = op[i];
-  alen = split;
-  while (alen > 0 && isspace((unsigned char)*a)) { a++; alen--; }
-  if (alen > 0 && *a == '/') {
-    /* "cy,/flags.3" exists only for AND1 and OR1, with CY as the
-     * destination; anywhere else the text is left alone, so vasm reports
-     * the operand as invalid instead of silently dropping the '/' */
-    if (cy != 0 || (strcmp(mn, "and1") != 0 && strcmp(mn, "or1") != 0))
-      return;
-    inv = 1;
-    a++; alen--;
-  }
-  memcpy(bitbuf, op[i] + split + 1, (size_t)(op_len[i] - split - 1));
-  bitbuf[op_len[i] - split - 1] = '\0';
-  /* the byte operand gets its own terminated copy: the expression parser
-   * reads a name to its end, and the dot is part of names */
-  if (alen >= (int)sizeof(abuf) || (alen == 2 && is_cy(a, alen)))
-    return;   /* "cy.3" is already this backend's form */
-  memcpy(abuf, a, (size_t)alen);
-  abuf[alen] = '\0';
-  a = abuf;
-
-  if (cy >= 0) {
-    /* "mov1 cy,flags.3" -> "mov1 cy.3,flags" */
-    snprintf(cybuf, sizeof(cybuf), "cy.%s", bitbuf);
-    op[cy] = cybuf;
-    op_len[cy] = (int)strlen(cybuf);
-    op[i] = a;
-    op_len[i] = alen;
-    if (inv && (strcmp(mn, "and1") == 0 || strcmp(mn, "or1") == 0)) {
-      snprintf(mnbuf, sizeof(mnbuf), "%si1", mn[0] == 'a' ? "and" : "or");
-      *inst = mnbuf;
-      *inst_len = (int)strlen(mnbuf);
-    }
-    return;
-  }
-  if (inv || *op_cnt >= MAX_OPERANDS)
-    return;
-  /* "bt flags.3,label" -> "bt flags,label,3" */
-  op[i] = a;
-  op_len[i] = alen;
-  op[*op_cnt] = bitbuf;
-  op_len[*op_cnt] = (int)strlen(bitbuf);
-  (*op_cnt)++;
-}
 
 int init_cpu(void)
 {

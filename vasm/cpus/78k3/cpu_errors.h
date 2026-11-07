@@ -10,3 +10,5 @@
   "saddr operand 0x%x is outside FE20H-FF1FH",ERROR,
   "based-addressing offset 0x%x out of range (must be 00H-FFH)",ERROR,
   "bit number 0x%x out of range (must be 0-7)",ERROR,
+  "bit number missing (write it as byte.bit, or as a separate operand)",ERROR,
+  "bit number given twice (as byte.bit and as a separate operand)",ERROR,

@@ -13,7 +13,7 @@
 | `vbcc/machines/78k3/generated/` | Pre-generated `dt.h`/`dt.c` (see its own README) -- lets `build.sh` skip vbcc's interactive `dtgen` step |
 | `vasm/cpus/78k3/` | New NEC 78K/3 assembler backend and opcode tables |
 | `vasm/Makefile.78k3` | Additional 78K/3 assembler build configuration |
-| `patches/vasm-std-78k3.patch` | vasm parser change: alternate registers (`AX'`, `BC'`, etc.) and `byte.bit` operand syntax (`SET1`/`CLR1`/etc.) |
+| `patches/vasm-std-78k3.patch` | vasm parser change: alternate registers (`AX'`, `BC'`, etc.) |
 | `build.sh` | Extracts original vendor archives, installs the backends, applies the patch, and builds the three tools |
 | `upstream/` | Original **unmodified** vendor source archives and their checksums |
 

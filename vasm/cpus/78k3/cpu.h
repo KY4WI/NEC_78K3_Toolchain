@@ -15,11 +15,6 @@
 /* up to 3 operands per instruction, matching Opcode.operand1/2/3 */
 #define MAX_OPERANDS 3
 
-/* NEC bit-operand syntax (set1 flags.3, bt flags.3,label, mov1 cy,flags.3,
- * and1 cy,/flags.3): rewritten into this backend's own form before the
- * operands are matched. Called by the std syntax module. See cpu.c. */
-void cpu_fixup_bit_syntax(char **inst, int *inst_len, char **op, int *op_len, int *op_cnt);
-
 /* PUSH/POP's register-list operand (OT_POST_BYTE/_U) is written as a
  * single brace-delimited, comma-separated field -- "push {ax,bc,de,hl}" --
  * rather than as several top-level operands, since MAX_OPERANDS==3 can't
@@ -61,7 +56,16 @@ typedef struct {
   int type;     /* OT_* from shared/Operand.h, or OP_DATA_ABS */
   int reg;      /* register/field value, for register-type operands */
   expr *val;    /* expression, for value/address/bit-number operands */
+  expr *bit;    /* NEC "byte.bit" form: the bit number written after the dot
+                 * of the byte operand (set1 flags.3, mov1 cy,flags.3); moved
+                 * into the bit-number operand before encoding. See cpu.c */
 } operand;
+
+/* A bit instruction's bit-number operand may be left out when the bit is
+ * written as part of the byte operand ("set1 flags.3" has one operand
+ * where the opcode row has two). Uses vasm's own optional-operand hook. */
+int cpu78k3_operand_optional(operand *, int);
+#define OPERAND_OPTIONAL(p,t) cpu78k3_operand_optional(p,t)
 
 /* mnemonic table extension: which row of the shared opps[] table
  * (shared/Opcodes.h) this mnemonic-table entry was generated from. See

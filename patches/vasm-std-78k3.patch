@@ -30,13 +30,3 @@
      lastuc = toupper((unsigned char)c);
  #endif
      s++;
-@@ -1344,6 +1347,9 @@ void parse(void)
-     }      
-     s=skip(s);
-     if(!ISEOL(s)) syntax_error(6);
-+#if defined(VASM_CPU_78K3)
-+    cpu_fixup_bit_syntax(&start,&inst_len,op,op_len,&op_cnt);
-+#endif
-     ip=new_inst(start,inst_len,op_cnt,op,op_len);
- #if MAX_QUALIFIERS>0
-     if(ip){
