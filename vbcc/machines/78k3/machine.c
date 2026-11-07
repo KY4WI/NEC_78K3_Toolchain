@@ -84,6 +84,26 @@ static char FILE_[]=__FILE__;
 /* Independent backend version; does not depend on upstream Makefile rules
    or the Git history of the extracted source tree. */
 #define VBCC78K3_VERSION "0.1"
+
+/* Register numbers (backend-private; deliberately NOT in machine.h, which
+   the frontend includes -- see the comment there).  MAXR (12) is defined
+   in machine.h and must equal the last number below. */
+/* byte registers, numbered 1..8 */
+#define REG_X 1
+#define REG_A 2
+#define REG_C 3
+#define REG_B 4
+#define REG_E 5
+#define REG_D 6
+#define REG_L 7
+#define REG_H 8
+
+/* register pairs, numbered 9..12 */
+#define REG_AX 9
+#define REG_BC 10
+#define REG_DE 11
+#define REG_HL 12
+
 char cg_copyright[]="vbcc 78K/III (uPD78312A) code-generator "
                     VBCC78K3_VERSION " (c) 2026 Dave (KY4WI)";
 
@@ -256,7 +276,7 @@ static int callt_slot_of(struct Var *v)
           "vbcc78k3: error: function \"%s\" has more than one "
           "__callt_slotN attribute (slot %d and slot %d)\n",
           v->identifier?v->identifier:"?",found,n);
-        raus();
+        ierror(0);
       }
       found=n;
     }
@@ -303,7 +323,7 @@ static void callt_slot_claim(int slot,const char *name,const char *symbol)
       fprintf(stderr,
         "vbcc78k3: error: __callt_slot%d claimed by both \"%s\" and "
         "\"%s\" in this file\n",slot,callt_slot_owner[slot],name);
-      raus();
+      ierror(0);
     }
     return;  /* same function redefined/reseen -- not a real collision */
   }
@@ -348,7 +368,7 @@ static int callt_auto_assign(const char *name,const char *symbol)
   fprintf(stderr,
     "vbcc78k3: error: no free CALLT slot left to auto-assign \"%s\" "
     "(all 32 slots already claimed)\n",name);
-  raus();
+  ierror(0);
   return -1; /* unreached */
 }
 
@@ -378,7 +398,7 @@ static int callt_resolve(struct Var *v)
       "vbcc78k3: error: function \"%s\" has both an explicit __callt_slot%d "
       "and the auto-assign __callt attribute -- use one or the other\n",
       v->identifier?v->identifier:"?",explicit_slot);
-    raus();
+    ierror(0);
   }
   if(explicit_slot>=0) return explicit_slot;
   if(wants_auto) return callt_auto_assign(v->identifier?v->identifier:"?",

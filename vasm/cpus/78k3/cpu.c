@@ -78,7 +78,6 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <strings.h>
 
 /* Independent backend version; updated when the 78K/III backend is released. */
 #define VASM78K3_VERSION "0.1"
@@ -130,7 +129,7 @@ static int match_fixed_token(const char *text, int len, int type)
   for (i = 0; i < FIXED_TOKENS_COUNT; i++) {
     if (fixed_tokens[i].type == type &&
         (int)strlen(fixed_tokens[i].text) == len &&
-        strncasecmp(fixed_tokens[i].text, text, (size_t)len) == 0)
+        cistrncmp(fixed_tokens[i].text, text, (size_t)len) == 0)
       return 1;
   }
   return 0;
@@ -244,7 +243,7 @@ static int looks_like_register_name(const char *p, int len)
       return 1;
   for (i = 0; i < FIXED_TOKENS_COUNT; i++)
     if ((int)strlen(fixed_tokens[i].text) == len &&
-        strncasecmp(fixed_tokens[i].text, p, (size_t)len) == 0)
+        cistrncmp(fixed_tokens[i].text, p, (size_t)len) == 0)
       return 1;
   return 0;
 }
@@ -385,7 +384,7 @@ int parse_operand(char *p, int len, operand *op, int requires)
         const char *name = use_u ? pushu_regs[i].name : push_regs[i].name;
         int bit = use_u ? pushu_regs[i].bit : push_regs[i].bit;
         if ((int)strlen(name) == itemlen &&
-            strncasecmp(name, itemstart, (size_t)itemlen) == 0) {
+            cistrncmp(name, itemstart, (size_t)itemlen) == 0) {
           unsigned bitval = 1u << bit;
           if (mask & bitval)
             return PO_NOMATCH;  /* same register named twice */
@@ -465,12 +464,12 @@ int parse_operand(char *p, int len, operand *op, int requires)
         in[n++] = p[i];
     in[n] = '\0';
     for (k = 0; k < 8; k++)
-      if (strcasecmp(in, m16[k]) == 0) {
+      if (cistrcmp(in, m16[k]) == 0) {
         op->type = requires; op->reg = (0x16 << 8) | k; op->val = NULL;
         return PO_MATCH;
       }
     for (k = 0; k < 6; k++)
-      if (strcasecmp(in, m17[k]) == 0) {
+      if (cistrcmp(in, m17[k]) == 0) {
         op->type = requires; op->reg = (0x17 << 8) | k; op->val = NULL;
         return PO_MATCH;
       }
@@ -479,7 +478,7 @@ int parse_operand(char *p, int len, operand *op, int requires)
     if (plus) {
       for (k = 0; k < 5; k++)
         if ((int)strlen(m06[k]) == (int)(plus - in) &&
-            strncasecmp(in, m06[k], (size_t)(plus - in)) == 0)
+            cistrncmp(in, m06[k], (size_t)(plus - in)) == 0)
           break;
       if (k < 5) {
         tree = parse_expr_full(plus + 1, (int)strlen(plus + 1));
@@ -494,7 +493,7 @@ int parse_operand(char *p, int len, operand *op, int requires)
     plus = strrchr(in, '+');
     if (plus && plus > in) {
       for (k = 0; k < 4; k++)
-        if (strcasecmp(plus + 1, m0a[k]) == 0)
+        if (cistrcmp(plus + 1, m0a[k]) == 0)
           break;
       if (k < 4) {
         *plus = '\0';   /* the expression parser reads to the end */
@@ -535,7 +534,7 @@ int parse_operand(char *p, int len, operand *op, int requires)
     if (requires == OT_SFRP && wlen >= 2 &&
         p[wlen - 2] == '.' && (p[wlen - 1] == 'w' || p[wlen - 1] == 'W'))
       wlen -= 2;
-    if (wlen < 5 || strncasecmp(p, "sfr[", 4) != 0 || p[wlen - 1] != ']')
+    if (wlen < 5 || cistrncmp(p, "sfr[", 4) != 0 || p[wlen - 1] != ']')
       return PO_NOMATCH;
     tree = parse_expr_full(p + 4, wlen - 5);
     if (!tree)
@@ -579,7 +578,7 @@ int parse_operand(char *p, int len, operand *op, int requires)
   if (requires == OT_CY_BIT) {
     expr *tree;
     int dot;
-    if (tlen < 4 || strncasecmp(p, "cy", 2) != 0 || p[2] != '.')
+    if (tlen < 4 || cistrncmp(p, "cy", 2) != 0 || p[2] != '.')
       return PO_NOMATCH;
     dot = 2;
     tree = parse_expr_full(p + dot + 1, tlen - dot - 1);

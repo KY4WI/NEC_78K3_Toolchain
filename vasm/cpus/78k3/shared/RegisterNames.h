@@ -15,9 +15,22 @@
  */
 
 #include <string.h>
-#include <strings.h>
+#include <ctype.h>
 
 typedef struct { const char *name; int value; } RegNameEntry;
+
+/* Case-insensitive compare of the first len bytes, plain ISO C (strncasecmp
+   is POSIX <strings.h>, not part of the C standard library). */
+static int regname_ncase_cmp(const char *a, const char *b, size_t len)
+{
+	for (; len > 0; len--, a++, b++) {
+		int ca = tolower((unsigned char)*a), cb = tolower((unsigned char)*b);
+		if (ca != cb) return ca - cb;
+		if (ca == 0) break;
+	}
+	return 0;
+}
+
 
 /* OT_R1 -- 3-bit register field (MOV a,r1 / MOV r1,a families) */
 static const RegNameEntry REGNAMES_R1[] = {
@@ -88,7 +101,7 @@ static int reg_name_lookup(const RegNameEntry *tbl, size_t n,
 	size_t i;
 	for (i = 0; i < n; i++) {
 		if ((int)strlen(tbl[i].name) == len &&
-		    strncasecmp(tbl[i].name, text, (size_t)len) == 0)
+		    regname_ncase_cmp(tbl[i].name, text, (size_t)len) == 0)
 			return tbl[i].value;
 	}
 	return -1;

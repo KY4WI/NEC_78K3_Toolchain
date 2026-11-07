@@ -47,22 +47,10 @@
 /* backends treat their own hardware SPs).                             */
 /* ------------------------------------------------------------------ */
 
-/* byte registers, numbered 1..8 */
-#define REG_X 1
-#define REG_A 2
-#define REG_C 3
-#define REG_B 4
-#define REG_E 5
-#define REG_D 6
-#define REG_L 7
-#define REG_H 8
-
-/* register pairs, numbered 9..12 */
-#define REG_AX 9
-#define REG_BC 10
-#define REG_DE 11
-#define REG_HL 12
-
+/* The individual REG_X..REG_HL register numbers (1..8 byte registers,
+   9..12 register pairs) are backend-private and live in machine.c: this
+   header is included by the vbcc frontend, so it only carries what the
+   frontend needs (MAXR).  See machine.c for the numbering. */
 #define MAXR 12
 
 /*  Number of commandline-options the code-generator accepts.       */
