@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NEC78K3_REGNAMES_H
+#define NEC78K3_REGNAMES_H
 
 /* Register / fixed-token name tables for the NEC 78K/III core.
  *
@@ -119,3 +120,5 @@ static const char *reg_name_from_value(const RegNameEntry *tbl, size_t n,
 	}
 	return NULL;
 }
+
+#endif /* NEC78K3_REGNAMES_H */

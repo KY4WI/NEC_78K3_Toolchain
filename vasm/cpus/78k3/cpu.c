@@ -3,9 +3,9 @@
  * Instruction encoder for NEC 78K/III microcontrollers. See cpu.h for
  * the overall design note: this backend does not maintain its own copy
  * of the instruction set. The mnemonic table (mnemonics[]) is generated
- * by gen_mnemonics.c straight from shared/Opcodes.h -- the exact same
+ * by gen_mnemonics.c straight from nec78k3_opcodes.h -- the exact same
  * table nec78k3_disassembler.c decodes with -- and every address-math
- * helper (saddr/saddr_fe/sfr <-> byte) comes from shared/Addressing.h,
+ * helper (saddr/saddr_fe/sfr <-> byte) comes from nec78k3_addressing.h,
  * again shared verbatim with the disassembler. A fix made in either
  * shared header applies to both tools next rebuild.
  *
@@ -62,7 +62,7 @@
  * "andi1 cy.3,0xfe30"). NEC's own form, the bit after the byte it belongs
  * to ("set1 flags.3", "bt flags.3,label", "mov1 cy,flags.3",
  * "and1 cy,/flags.3"), is accepted too, entirely inside this backend:
- * the byte operand's slot in mnemonics[] carries OTF_BITSFX (otflags.h), so
+ * the byte operand's slot in mnemonics[] carries OTF_BITSFX (nec78k3_otflags.h), so
  * parse_operand() splits off the ".bit", keeps it in operand.bit, and
  * resolve_bit_operands() moves it into the bit-number operand just before
  * encoding. Both range-check to 0-7 at encode time. See parse_operand()'s
@@ -71,14 +71,14 @@
 
 #include "vasm.h"
 
-#include "shared/Types.h"
-#include "shared/Operand.h"
-#include "shared/Mnemonic.h"
-#include "shared/Opcode.h"
-#include "shared/Opcodes.h"
-#include "shared/Addressing.h"
-#include "shared/RegisterNames.h"
-#include "otflags.h"
+#include "nec78k3_types.h"
+#include "nec78k3_operand.h"
+#include "nec78k3_mnemonic.h"
+#include "nec78k3_opcode.h"
+#include "nec78k3_opcodes.h"
+#include "nec78k3_addressing.h"
+#include "nec78k3_regnames.h"
+#include "nec78k3_otflags.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -92,8 +92,8 @@ const char *cpuname = "78k3";
 int bytespertaddr = 2;
 
 /* mnemonic mnemonics[]; const int mnemonic_cnt; -- auto-generated from
- * shared/Opcodes.h, see gen_mnemonics.c. Regenerate with ./regen.sh
- * after any change to shared/Opcodes.h. */
+ * nec78k3_opcodes.h, see gen_mnemonics.c. Regenerate with ./regen.sh
+ * after any change to nec78k3_opcodes.h. */
 #include "mnemonics_gen.c"
 
 /* ================= operand parsing ================= */
@@ -140,7 +140,7 @@ static int match_fixed_token(const char *text, int len, int type)
   return 0;
 }
 
-/* which register-name table (see shared/RegisterNames.h) an operand
+/* which register-name table (see nec78k3_regnames.h) an operand
  * type uses, if any. OT_RP1P is handled separately (needs bracket
  * stripping) even though it shares OT_RP1's table. OT_RPL shares
  * OT_RP1's table outright (see this file's header comment -- confirmed
@@ -552,13 +552,13 @@ static int parse_operand_base(char *p, int len, operand *op, int requires)
   /* cy.N -- OT_CY_BIT, the "which bit" side of the CY-paired bit
    * instructions (MOV1/AND1/OR1/ANDI1/ORI1/XOR1). These mnemonics move a
    * single bit between the carry flag and a numbered bit of another
-   * operand (saddr/sfr/a/x/pswh/pswl -- see shared/Opcodes.h's OP_CY_BIT_2
+   * operand (saddr/sfr/a/x/pswh/pswl -- see nec78k3_opcodes.h's OP_CY_BIT_2
    * rows), but the opcode table only ever gives this instruction FAMILY
    * two real operand slots: one for "cy" itself, one for the OTHER side
    * (saddr/sfr/register) -- there is no separate third slot for the bit
    * number anywhere in these rows (unlike SET1/CLR1/NOT1/BT/BF/BTCLR/
    * BFSET below, which DO have a genuine standalone OT_N_BIT slot). Yet
-   * OP_CY_BIT_2's own byteOffset/mask (shared/Opcodes.h) is real encoding
+   * OP_CY_BIT_2's own byteOffset/mask (nec78k3_opcodes.h) is real encoding
    * metadata for a bit-number field -- so the bit number has to travel
    * somewhere, and the only operand slot available to carry it is this
    * one, textually attached to "cy" itself.
@@ -578,7 +578,7 @@ static int parse_operand_base(char *p, int len, operand *op, int requires)
    * for this one instruction family; a human transcribing real disassembly
    * needs to move the ".N" over to "cy" by hand. Confirmed as the only
    * operand slot with room for the bit value by reading every OP_CY_BIT_2
-   * row in shared/Opcodes.h: none of them pair with a separate OT_N_BIT
+   * row in nec78k3_opcodes.h: none of them pair with a separate OT_N_BIT
    * slot in the same row. */
   if (requires == OT_CY_BIT) {
     expr *tree;
@@ -859,7 +859,7 @@ static int is_known_symbol(const char *p, int len)
 }
 
 /* parse_operand() as vasm calls it. Bit instructions give the byte
- * operand's slot in mnemonics[] the OTF_BITSFX flag (otflags.h): that
+ * operand's slot in mnemonics[] the OTF_BITSFX flag (nec78k3_otflags.h): that
  * operand may then end in ".bit", NEC's way of naming the bit ("set1
  * flags.3", "bt flags.3,label", "mov1 cy,flags.3"). The bit expression is
  * parked in op->bit and the rest is parsed as the plain type;
@@ -935,7 +935,7 @@ static void write_word_le(byte *outbytes, int byteOffset, uint16 w)
 /* Evaluate a parsed operand's expression to a constant. V1 only
  * supports single-file assembly with locally-defined labels (matching
  * the project's current scope -- a self-contained label/entries bundle
- * per shared/Addressing.h and the disassembler's -l/-t files), so an
+ * per nec78k3_addressing.h and the disassembler's -l/-t files), so an
  * expression that isn't resolvable yet is an error rather than a
  * relocation. */
 static int eval_const(expr *tree, section *sec, taddr pc, taddr *result)
@@ -954,7 +954,7 @@ static int eval_const(expr *tree, section *sec, taddr pc, taddr *result)
  * (S+A, or S+A-P for the pc-relative case) -- vlink's generic REL_ABS/
  * REL_PC relocation types cover that exactly, no 78k3-specific relocation
  * type needed. SADDR/SADDR_FE/SFR are deliberately NOT here: their address
- * math (shared/Addressing.h) is a conditional branch before truncating
+ * math (nec78k3_addressing.h) is a conditional branch before truncating
  * to a byte, not an affine transform, so a generic
  * linker relocation can't express them -- those still hard-error on an
  * unresolvable symbol, same as before this existed. */
@@ -1011,7 +1011,7 @@ static int encode_operand(operand *p, const Operand *od, byte *outbytes,
   case OT_RP1P: case OT_RP2: case OT_MEM_S: case OT_RB_NUM: case OT_RB_NUM_ALT:
   case OT_POST_BYTE: case OT_POST_BYTE_U:
     /* p->reg already holds the fully-assembled post byte (parse_operand()'s
-     * OT_POST_BYTE/_U case); OP_POST_BYTE_2/_U_2 (shared/Opcodes.h) place it
+     * OT_POST_BYTE/_U case); OP_POST_BYTE_2/_U_2 (nec78k3_opcodes.h) place it
      * at byteOffset=1 with a full 0xff mask, same as any other single-byte
      * register-value operand. */
     write_masked(outbytes, od, (unsigned)p->reg);
@@ -1212,7 +1212,7 @@ static int encode_operand(operand *p, const Operand *od, byte *outbytes,
   case OT_CY_BIT:
     /* Both are a plain 3-bit field (bit number 0-7) at od->byteOffset/
      * opMask/opShift -- write_masked() already does exactly this,
-     * identically for both operand types (shared/Opcodes.h's OP_N_BIT
+     * identically for both operand types (nec78k3_opcodes.h's OP_N_BIT
      * and OP_CY_BIT_2 rows all use mask=0b111, shift=0). See
      * parse_operand()'s OT_CY_BIT comment for why OT_CY_BIT's own
      * accepted syntax ("cy.N") differs from what the disassembler prints. */
@@ -1416,7 +1416,7 @@ static int opcode_bytes(const Opcode *o);
  * Long-range expansion for short (8-bit-relative-only) conditional
  * branches: BE/BNE/BL/BNL/BGT/BGE/BLT/BLE/BH/BNH/BT/BF. Unlike BR
  * (br_fits_relative()/br_row_for_pass() above), none of these has a
- * second, absolute-addressed opcode row in shared/Opcodes.h -- confirmed
+ * second, absolute-addressed opcode row in nec78k3_opcodes.h -- confirmed
  * by inspection, and consistent with the datasheet: this CPU's
  * conditional branches are hardware-limited to a single signed-byte
  * PC-relative displacement, full stop, no long form exists to fall back
@@ -1487,7 +1487,7 @@ static const Operand *operand_at(const Opcode *o, int idx)
  * this project has -- re-derived rather than assumed, since nothing
  * here depends on that being true). Returns 0 if `o` isn't a branch
  * this relaxation covers, or (defensively) if a row it expects to exist
- * in shared/Opcodes.h is somehow missing -- callers treat that exactly
+ * in nec78k3_opcodes.h is somehow missing -- callers treat that exactly
  * like "doesn't need relaxing" and let the normal short-form encoding's
  * own range check raise the usual, honest error rather than risk
  * emitting something unverified. */
@@ -1535,7 +1535,7 @@ static int cbranch_needs_relax(instruction *ip, const Opcode *o,
 
 /* ---------------------------------------------------------------------
  * DBNZ (decrement-and-branch-if-not-zero) has the same hardware limit as
- * every conditional branch above -- shared/Opcodes.h gives it two rows
+ * every conditional branch above -- nec78k3_opcodes.h gives it two rows
  * (register form, OT_SADDR form), both OT_ADDR16R-only, no absolute
  * fallback -- but unlike a flag-test branch, it can't simply be
  * inverted: there is no instruction for "branch if this decrement WOULD
@@ -1567,7 +1567,7 @@ static int dbnz_needs_relax(instruction *ip, const Opcode *o,
   return !br_fits_relative(ip->op[1], sec, pc, (taddr)opcode_bytes(o));
 }
 
-/* shared/Opcodes.h uses bytes==0 as a placeholder for every OT_MEM row:
+/* nec78k3_opcodes.h uses bytes==0 as a placeholder for every OT_MEM row:
  * the size depends on the addressing mode actually written, so it is
  * worked out per instruction by mem_mode_bytes() below. opcode_bytes()
  * is for the rows whose size is fixed (its 3 is only a fallback for an
@@ -1718,7 +1718,7 @@ dblock *eval_instruction(instruction *ip, section *sec, taddr pc)
   } else if (relax_dbnz) {
     /* dbnz_needs_relax()'s own rationale (above) covers the full shape;
      * both BR rows are guaranteed to exist (M_BR always has both an
-     * OT_ADDR16R and an OT_ADDR16 row in shared/Opcodes.h -- already
+     * OT_ADDR16R and an OT_ADDR16 row in nec78k3_opcodes.h -- already
      * relied on unconditionally by br_row_for_pass() above). */
     const Opcode *brel = find_opps_row(M_BR, OT_ADDR16R);
     const Opcode *babs = find_opps_row(M_BR, OT_ADDR16);
@@ -1763,7 +1763,7 @@ dblock *eval_instruction(instruction *ip, section *sec, taddr pc)
     /* MOV WDM,#imm / MOV STBC,#imm ("09 4x [~imm] [imm]") write a byte
      * and its one's complement as a guard against corrupting these two
      * protected control registers (watchdog mode, standby control) with
-     * a runaway or glitched write -- shared/Opcodes.h's generic
+     * a runaway or glitched write -- nec78k3_opcodes.h's generic
      * per-operand model has no row-level way to express "this fixed
      * byte depends on that other operand", so it's special-cased here
      * instead. Confirmed against every "mov wdm/stbc,#imm" instance in

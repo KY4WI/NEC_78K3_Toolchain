@@ -4,7 +4,7 @@
     This machine.h is derived from vbcc's own machines/generic/ template
     (see doc/interface.texi), with the register set and basic data types
     replaced by the real 78K/III values. It is confirmed against:
-      - shared/Mnemonic.h and shared/Opcodes.h (our own verified
+      - nec78k3_mnemonic.h and nec78k3_opcodes.h (our own verified
         disassembler/assembler opcode tables -- ground truth for which
         instructions actually exist on the 78312A)
       - NEC Application Note U12118EJ4V0AN00 ("78K/III Series Software
@@ -29,7 +29,7 @@
 /*     AX = (A:X)   BC = (B:C)   DE = (D:E)   HL = (H:L)               */
 /* (high half named first, matching NEC's own convention and mirroring */
 /*  our vasm/disassembler's already-verified RP encoding in            */
-/*  shared/Opcodes.h -- OP_RP1/OP_RP1P etc.)                          */
+/*  nec78k3_opcodes.h -- OP_RP1/OP_RP1P etc.)                          */
 /*                                                                     */
 /* There are 4 selectable register BANKS (RB0-RB3, chosen via the PSW */
 /* RBS bits and the SEL instruction), each holding its own independent */
@@ -129,6 +129,6 @@ struct AddressingMode {
 
 /* multiplication/division by powers of two -> shifts: the 78312A has
    no signed multiply/divide in hardware (only MULU/MULUW/DIVUW/DIVUX,
-   confirmed via shared/Mnemonic.h), so this optimization matters more
+   confirmed via nec78k3_mnemonic.h), so this optimization matters more
    here than on machines with a cheap signed multiply instruction. */
 #define HAVE_POF2OPT 1

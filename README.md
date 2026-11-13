@@ -67,7 +67,7 @@ This is a **source build**, not an installer or a fully configured `vc` driver e
 
 The 78K/3 backends have been used to generate code, but are not feature-complete. The assembler's opcode tables use standard C99 hexadecimal constants; binary comments retain useful field and mask layouts. A successful build or assembly does not guarantee correct output. Consult [backend known issues](vbcc/machines/78k3/BUGS.md), [testing notes](TESTING.md), and the comments in the backend sources. Support is aimed at the µPD78312-compatible subset currently being reverse engineered; compatibility across all 78K/III devices is **not** implied. The smoke-test linked output is not a bootable radio image; see [testing notes](TESTING.md) for a real-hardware test path.
 
-The assembler instruction tables under `vasm/cpus/78k3/shared/` are self-contained copies synchronized with the separate reverse-engineering/disassembler project. No access to that project is required to build this repository.
+The assembler instruction tables (`vasm/cpus/78k3/nec78k3_*.h`; the backend directory is flat, as vasm's distribution Makefile only picks up `*.c`/`*.h` files directly inside a cpu directory) are self-contained copies synchronized with the separate reverse-engineering/disassembler project. No access to that project is required to build this repository.
 
 **Please report bugs.** Open an [issue](https://github.com/KY4WI/NEC_78K3_Toolchain/issues), including source input, the command line, expected behavior, actual output or diagnostic, host OS, and versions/checksums of the three upstream archives. A short failing case is more useful than a full firmware dump. Please **do not attach copyrighted Kenwood firmware or ROM images**.
 

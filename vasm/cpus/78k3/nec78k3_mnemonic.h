@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NEC78K3_MNEMONIC_H
+#define NEC78K3_MNEMONIC_H
 
 typedef enum Mnemonic
 {
@@ -227,3 +228,5 @@ static const char* mnemonic_names[] =
 	"EI",
 	"DI"
 };
+
+#endif /* NEC78K3_MNEMONIC_H */

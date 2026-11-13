@@ -1,12 +1,13 @@
-#pragma once
+#ifndef NEC78K3_OPCODE_H
+#define NEC78K3_OPCODE_H
 
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 
-#include "Types.h"
-#include "Mnemonic.h"
-#include "Operand.h"
+#include "nec78k3_types.h"
+#include "nec78k3_mnemonic.h"
+#include "nec78k3_operand.h"
 
 typedef struct Opcode
 {
@@ -39,3 +40,5 @@ static void opcode_print_mnemonic(const Opcode *op)
 	}
 	printf("%-8s", name);
 }
+
+#endif /* NEC78K3_OPCODE_H */

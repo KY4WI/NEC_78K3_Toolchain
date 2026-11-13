@@ -6,7 +6,7 @@
     predicate functions (freturn/regok/dangerous_IC/must_convert/
     reg_pair/cost_savings) below are REAL: they reflect the actual
     78312A register set and type widths, cross-checked against our
-    own verified shared/Mnemonic.h + shared/Opcodes.h tables and the
+    own verified nec78k3_mnemonic.h + nec78k3_opcodes.h tables and the
     NEC User's Manual.
 
     gen_code() now handles real scalar (char/short/int/pointer)
@@ -21,12 +21,12 @@
     drove regok()'s CHAR limitation, and the memory<->register
     fixed-A restriction that drove load_byte()/store_byte()/
     load_word()/store_word()'s design were each confirmed against
-    shared/Opcodes.h and/or the NEC User's Manual, not assumed.
+    nec78k3_opcodes.h and/or the NEC User's Manual, not assumed.
 
     gen_code() also now handles CALL/PUSH (function calls). The
     78312A has no usable single-register hardware push (PUSH/POP only
     exist as a register-LIST-bitmask form or the fixed-PSW form, per
-    shared/Opcodes.h), so this is a FIXED_SP-style convention of our
+    nec78k3_opcodes.h), so this is a FIXED_SP-style convention of our
     own design (there is no NEC-authored 78K/III C compiler ABI to
     match): gen_code() pre-scans the whole IC list for the largest
     single CALL's pushedargsize (argsize), reserves that on top of
@@ -178,7 +178,7 @@ int regscratch[MAXR+1];
 /* __callt_slotN (N=0-31): NEC 78K/III CALLT instruction support. CALLT is
    a 1-byte call through a fixed 32-entry, 2-byte-per-entry address table
    at 0x0040-0x007F (CALLT's operand is a hardware 5-bit field -- OT_ADDR5
-   in shared/Operand.h -- so exactly 32 slots, 64 bytes; NOT 0x0040-0x007E
+   in nec78k3_operand.h -- so exactly 32 slots, 64 bytes; NOT 0x0040-0x007E
    as the project's own firmware doc currently has it, off by one byte).
    The stock TK-x4x firmware uses this heavily (panel-byte send, EEPROM
    helpers, the BU4094/M62363 writes, UART send/receive -- see
@@ -558,7 +558,7 @@ void cleanup_cg(FILE *f)
 
 /* ------------------------------------------------------------------ */
 /* Register pairs: AX=(A:X), BC=(B:C), DE=(D:E), HL=(H:L).             */
-/* Naming/ordering matches shared/Opcodes.h's already-verified RP      */
+/* Naming/ordering matches nec78k3_opcodes.h's already-verified RP      */
 /* encoding and the register table in NEC AN U12118EJ4V0AN00.          */
 /* ------------------------------------------------------------------ */
 int reg_pair(int r,struct rpair *p)
@@ -603,7 +603,7 @@ int regok(int r,int t,int mode)
   t&=NQ;
   if(t==0) return 0; /* no condition-code registers in this backend yet */
   if(t==CHAR||t==(CHAR))
-    /* NOT r>=REG_X&&r<=REG_H: shared/RegisterNames.h's REGNAMES_R1 table
+    /* NOT r>=REG_X&&r<=REG_H: nec78k3_regnames.h's REGNAMES_R1 table
        (the "r1" register-source field used by every 8-bit ALU op's
        register-register row, e.g. "add r,r1", and by the fixed-A forms
        "mov a,r1"/"xch a,r1") only contains x/a/c/b (+ the alternate-bank
@@ -615,7 +615,7 @@ int regok(int r,int t,int mode)
        PAIR move -- see load_word()/store_word() below). Simplest correct
        fix: never let a scalar char live independently in d/e/h/l at all;
        they stay reserved as halves of the DE/HL pairs. Confirmed against
-       shared/Opcodes.h's actual OP_R1-using rows, not assumed. */
+       nec78k3_opcodes.h's actual OP_R1-using rows, not assumed. */
     return r==REG_X||r==REG_A||r==REG_C||r==REG_B;
   if(t==SHORT||t==INT||t==POINTER)
     return r>=REG_AX&&r<=REG_HL;
@@ -726,7 +726,7 @@ static void emit_obj(FILE *f,struct obj *p,int t)
    ("based addressing", NEC User's Manual sec 4.2.8, mod=0x06) --
    confirmed real hardware, now implemented in vasm's cpu.c. It is
    8-bit only (no word form -- checked every MOVW/ADDW/SUBW/CMPW row
-   in shared/Opcodes.h, none take OT_MEM), so a 2-byte local is always
+   in nec78k3_opcodes.h, none take OT_MEM), so a 2-byte local is always
    two separate 8-bit accesses at offset and offset+1.
 
    Frame layout (matches the standard vbcc convention in
@@ -745,7 +745,7 @@ static void emit_obj(FILE *f,struct obj *p,int t)
 
    The "outgoing call args" area exists because the 78312A's only real
    PUSH/POP instructions take a register-LIST bitmask (OT_POST_BYTE --
-   see shared/Opcodes.h), which vasm's cpu.c doesn't implement yet, so
+   see nec78k3_opcodes.h), which vasm's cpu.c doesn't implement yet, so
    there is no real per-argument push available. Instead -- exactly
    like the FIXED_SP model other vbcc backends use for architectures
    without a hardware push (see machines/minx/machine.c) -- we
@@ -802,7 +802,7 @@ static void resolve_pointer(FILE *f,struct obj *o,int t);
    scope: OT_SADDR/OT_SADDR_FE's own vasm-side parser (cpus/78k3/cpu.c)
    requires the address to already be resolved at ASSEMBLE time, one
    file at a time, before vlink ever runs (a saddr byte is a nonlinear
-   transform of the address -- see shared/Addressing.h -- not something
+   transform of the address -- see nec78k3_addressing.h -- not something
    a linker relocation can express, so vasm correctly refuses to gamble
    and falls back to OT_ADDR16 whenever it can't prove the address in
    range right now). An ordinary vbcc-emitted "_myvar" reference is a
@@ -820,7 +820,7 @@ static void resolve_pointer(FILE *f,struct obj *o,int t);
    CALLT-style) if it's ever wanted.
 
    Address windows below are FE20H-FF1FH (saddr) and FF00H-FFFFH (sfr),
-   confirmed against shared/Addressing.h (this toolchain's single source
+   confirmed against nec78k3_addressing.h (this toolchain's single source
    of truth for the saddr/sfr <-> byte transforms) and independently
    matching vasm's own OT_SADDR/OT_SFR range checks in cpus/78k3/cpu.c.
    The two windows overlap in FF00H-FF1FH; a bare address there is left
@@ -912,7 +912,7 @@ static int const_deref_addr_word(struct obj *o,unsigned long *addr)
    byte of a word, 1 for a word's high byte). A DREFOBJ operand (pointer
    dereference, e.g. "*p") is resolved into the fixed DE scratch pair
    first (see resolve_pointer()) and printed as [de+byteoff] -- a real,
-   directly-encodable addressing mode: shared/Opcodes.h's OP_MEM_MOD is
+   directly-encodable addressing mode: nec78k3_opcodes.h's OP_MEM_MOD is
    accepted by MOV/XCH/ADD/ADDC/SUB/SUBC/AND/OR/XOR/CMP with ANY valid
    [reg+byte] base register (not just SP), confirmed by grepping every
    OP_MEM_MOD row -- so this needs no scratch-register bounce beyond
@@ -976,7 +976,7 @@ static void emit_var_mem(FILE *f,struct obj *o,long byteoff)
 /* Register load/store helpers.
 
    Hardware constraints these all work around (verified against
-   shared/Opcodes.h + shared/RegisterNames.h, not assumed):
+   nec78k3_opcodes.h + nec78k3_regnames.h, not assumed):
     - Every memory<->register 8-bit MOV (saddr/addr16/our new [sp+byte])
       is fixed to the A register on the register side -- there is no
       "mov [addr],x" or "mov h,[addr]" form. So all memory traffic
@@ -1178,7 +1178,7 @@ static void load_word(FILE *f,int destpair,struct obj *o,int t)
   {
     /* MOVW to/from saddrp/sfrp only ever names AX as the register
        operand (confirmed by grepping every OP_SADDRP_2/OP_SFRP_2 row
-       in shared/Opcodes.h's MOVW entries -- none pair with OP_BC/OP_DE/
+       in nec78k3_opcodes.h's MOVW entries -- none pair with OP_BC/OP_DE/
        OP_HL, only OP_AX), so this fast path is restricted to
        destpair==REG_AX; any other destpair (e.g. the REG_HL scratch
        pair ADD/SUB/CMP's word case loads a DREFOBJ q2 into) falls
@@ -1344,8 +1344,8 @@ static void store_word(FILE *f,int srcpair,struct obj *o,int t)
    absolute address, or already REG in some register) into something
    [reg+byte] addressing can use.
 
-   Only DE, SP and HL are valid [reg+byte] base registers (shared/
-   Opcodes.h's OT_MEM rows via the MEM_REGS table also used by the
+   Only DE, SP and HL are valid [reg+byte] base registers (
+   nec78k3_opcodes.h's OT_MEM rows via the MEM_REGS table also used by the
    independent sweep-test: de/sp/hl/up/vp -- we don't model the
    78312A's UP/VP system registers as general storage, and SP is
    reserved for our own frame bookkeeping), so a pointer resident in
@@ -1425,7 +1425,7 @@ static void store_word_at_sp(FILE *f,int srcpair,long off)
    frame size is relative to whatever SP the caller handed us), and
    can only add/subtract a word immediate into AX (ADDW/SUBW AX,#word)
    -- confirmed by grepping every OT_SP and M_ADDW/M_SUBW row in
-   shared/Opcodes.h. So allocating the frame is:
+   nec78k3_opcodes.h. So allocating the frame is:
        movw ax,sp / subw ax,#localsize / movw sp,ax
    Freeing it in function_bottom() has one more wrinkle: by the time
    we get there, AX may already hold this function's return value
@@ -1957,8 +1957,8 @@ static void gen_word_shift(FILE *f,struct IC *p,int t,int rshift,int uns,long cn
    natural loop primitive for this -- confirmed as a real, already-
    used-in-the-actual-firmware instruction (12 real instances in the
    mask ROM disassembly, e.g. "dbnz c,0x0b17"), not just present in
-   shared/Opcodes.h's table. Its counter operand is restricted to C or
-   B only (OT_R2's 1-bit register field -- see shared/RegisterNames.h)
+   nec78k3_opcodes.h's table. Its counter operand is restricted to C or
+   B only (OT_R2's 1-bit register field -- see nec78k3_regnames.h)
    -- C is used throughout below, matching the existing convention
    elsewhere in this file of using C as the "other" byte scratch.
 
@@ -1971,8 +1971,8 @@ static void gen_word_shift(FILE *f,struct IC *p,int t,int rshift,int uns,long cn
    skipping it entirely when the runtime count is 0 -- via "mov a,c /
    cmp a,#0 / be lzero", not the more obvious "cmp c,#0" directly,
    because CMP's immediate form only ever pairs with A (confirmed
-   empirically: vasm rejects "cmp c,#0" outright, and shared/
-   Opcodes.h's M_CMP rows never pair OP_BYTE with OP_R1/OP_R2). Using
+   empirically: vasm rejects "cmp c,#0" outright, and
+   nec78k3_opcodes.h's M_CMP rows never pair OP_BYTE with OP_R1/OP_R2). Using
    A as scratch here, before q1 has been loaded into it, is why q1's
    own load is duplicated on the "count is zero" path below (see
    gen_byte_shift_var()/gen_word_shift_var() themselves) rather than
@@ -2038,7 +2038,7 @@ static void gen_byte_shift_var(FILE *f,struct IC *p,int t,int rshift,int uns,int
   }
   /* Test the runtime count for zero. CMP's immediate form is A-only --
      confirmed empirically (vasm rejects "cmp c,#0" with "illegal
-     operand types") and by shared/Opcodes.h's M_CMP rows, which only
+     operand types") and by nec78k3_opcodes.h's M_CMP rows, which only
      ever pair an immediate BYTE operand with OP_A, never OP_R1/OP_R2.
      So the test has to go through A -- but A isn't free yet (q1 hasn't
      been loaded), so this uses A as pure scratch here and q1 gets
@@ -2154,7 +2154,7 @@ static void gen_unsigned_byte_divmod(FILE *f,struct IC *p,int t,int ismod)
 }
 
 /* Word-sized bitwise AND/OR/XOR: no hardware ANDW/ORW/XORW exists (see
-   shared/Mnemonic.h -- confirmed by a full-file dump, same absence
+   nec78k3_mnemonic.h -- confirmed by a full-file dump, same absence
    already noted for MULW). Unlike ADD/SUB, a bitwise op has zero
    inter-byte dependency (no carry/borrow crosses the byte boundary),
    so it decomposes trivially into two fully independent byte ops --
@@ -2199,7 +2199,7 @@ static void gen_word_bitwise(FILE *f,struct IC *p,int t,const char *mn)
    DREFOBJ branches load_byte()/store_byte()/load_word()/store_word()/
    emit_var_mem() gained: a DREFOBJ operand is resolved into the fixed
    DE scratch pair and accessed via real [de+byte] based addressing
-   (shared/Opcodes.h's OP_MEM_MOD, confirmed to accept ANY valid
+   (nec78k3_opcodes.h's OP_MEM_MOD, confirmed to accept ANY valid
    [reg+byte] base -- not just SP -- on MOV/ADD/SUB/AND/OR/XOR/CMP).
    Since every IC case already routes its operand access through those
    four helpers (or, for a direct memory operand in a byte ALU/COMPARE
@@ -2222,7 +2222,7 @@ static void gen_word_bitwise(FILE *f,struct IC *p,int t,const char *mn)
       a*b truncates to the result's own width anyway. No signed
       multiply instruction exists in hardware at all (MULW is in the
       manual's instruction list but was apparently never wired into
-      shared/Mnemonic.h/Opcodes.h), but this makes that moot.
+      nec78k3_mnemonic.h/Opcodes.h), but this makes that moot.
     - DIV/MOD have no such shortcut -- hardware divide (DIVUW/DIVUX)
       is genuinely unsigned-only, so a signed divide/modulo computes
       the unsigned quotient/remainder of the operands' absolute values
@@ -2401,7 +2401,7 @@ static long konst_long(struct obj *o,int t)
    exact same architectural boundary already established for saddr/
    SFR addressing in general (see the block comment above
    SADDR_WINDOW_LO): vasm's OT_N_BIT operand requires the address to
-   be a fully-resolved constant at assemble time (shared/Opcodes.h's
+   be a fully-resolved constant at assemble time (nec78k3_opcodes.h's
    SET1/CLR1 rows only offer OP_SADDR/OP_SFR/OP_A/OP_X/OP_PSWH/
    OP_PSWL memory forms -- no [sp+byte]/[hl] form at all), which only
    a literal constant address can satisfy; const_deref_addr() already
@@ -2547,7 +2547,7 @@ static int try_native_incdec(FILE *f,struct IC *p,int c,int t)
    General native ADD/SUB (byte or word) of an ARBITRARY compile-time
    constant directly against a constant saddr/sfr-window address --
    "x += N;"/"x -= N;" for any N, not just the by-1 case above (task
-   #48, found while auditing for it: shared/Opcodes.h has a genuine
+   #48, found while auditing for it: nec78k3_opcodes.h has a genuine
    direct "add/sub saddr,#byte" and "addw/subw saddrp,#word" memory-
    immediate form -- confirmed assemblable with vasm as-is, no new
    backend work needed there, same as every other addressing mode
@@ -2679,7 +2679,7 @@ static int try_native_compare_konst(FILE *f,struct IC *p,int t)
     - the tested address must resolve via const_deref_addr() -- the
       SAME literal-constant saddr/sfr-window-address boundary as
       #44/#46/#48, for the identical reason: BT/BF's tested-location
-      operand (shared/Opcodes.h: OP_SADDR/OP_SFR) can only take an
+      operand (nec78k3_opcodes.h: OP_SADDR/OP_SFR) can only take an
       assemble-time-resolved address, never an ordinary linker-placed
       C global or a register-resident variable (this backend keeps
       every C variable memory-resident across IC boundaries -- see
@@ -2690,8 +2690,8 @@ static int try_native_compare_konst(FILE *f,struct IC *p,int t)
       separate check needed here.
     - the mask must have exactly one bit set, AND that bit must be in
       0..7: BT/BF's bit-number field only ever addresses one of the
-      eight bits of the single byte at the tested address (shared/
-      Opcodes.h's OP_N_BIT field; the manual's "saddr.bit"/"sfr.bit"
+      eight bits of the single byte at the tested address (
+      nec78k3_opcodes.h's OP_N_BIT field; the manual's "saddr.bit"/"sfr.bit"
       operand notation agrees) -- a mask bit at or above 8 cannot be a
       legal BT/BF operand regardless of int-widening, so this declines
       and falls through to the generic path unchanged. (Bits 0..7 stay
@@ -2733,7 +2733,7 @@ static int try_native_compare_konst(FILE *f,struct IC *p,int t)
       corroborated independently via the manual's timing tables: BT/BF
       are listed among the plain conditional-branch instructions ((20)
       "Conditional branch instructions"), and their operand encoding
-      (shared/Opcodes.h) carries only a source bit-address plus a
+      (nec78k3_opcodes.h) carries only a source bit-address plus a
       branch-target displacement -- no destination field at all,
       unlike e.g. DBNZ in that very same instruction group, which does
       write back.
@@ -2785,7 +2785,7 @@ static int try_native_bit_branch(FILE *f,struct IC **pp)
   /* BEQ -> BF (branch if bit clear), BNE -> BT (branch if bit set);
      uniform across both shapes -- see the block comment above.
      Operand order (address, label, bit) confirmed against
-     shared/Opcodes.h's field order for M_BT/M_BF (OP_SADDR/OP_SFR,
+     nec78k3_opcodes.h's field order for M_BT/M_BF (OP_SADDR/OP_SFR,
      OP_ADDR16R, OP_N_BIT) and directly verified by assembling and
      disassembling both "bt sfr[addr],label,bit" and
      "bt <saddr>,label,bit" probes byte-correct. */
@@ -2874,8 +2874,8 @@ static int try_native_bit_branch(FILE *f,struct IC **pp)
    store_byte()/SETRETURN already accept a value sitting in A exactly
    as readily as one freshly loaded from a temp, since that's always
    been their contract; A just gets filled a cheaper way here.
-   "mov a,#0" and "mov a,#1" are both ONE instruction (shared/
-   Opcodes.h's MOV A,#byte immediate form) versus move0/move1's
+   "mov a,#0" and "mov a,#1" are both ONE instruction (
+   nec78k3_opcodes.h's MOV A,#byte immediate form) versus move0/move1's
    current 5-instruction ASSIGN-of-a-2-byte-KONST-into-a-stack-slot
    path (load_word()+store_word()), and the CONVERT+[SETRETURN] pair
    -- currently another 8-9 instructions of stack reloads -- collapses
@@ -3130,7 +3130,7 @@ void gen_code(FILE *f,struct IC *p,struct Var *v,zmax offset)
         switch(c){
         case ADD: mn=word?"addw":"add"; break;
         case SUB: mn=word?"subw":"sub"; break;
-        case AND: mn="and"; break; /* no ANDW -- shared/Mnemonic.h has no such mnemonic */
+        case AND: mn="and"; break; /* no ANDW -- nec78k3_mnemonic.h has no such mnemonic */
         case OR:  mn="or";  break;
         case XOR: mn="xor"; break;
         default:  mn=0;
@@ -3356,7 +3356,7 @@ void gen_code(FILE *f,struct IC *p,struct Var *v,zmax offset)
 
     case MULT:
       /* No signed multiply exists in hardware at all (MULW is in the
-         manual's instruction list but not in shared/Mnemonic.h/
+         manual's instruction list but not in nec78k3_mnemonic.h/
          Opcodes.h -- confirmed absent by a full-file dump -- so it was
          apparently never wired into our shared assembler/disassembler
          source of truth and isn't available to emit here regardless).
@@ -3735,9 +3735,9 @@ void gen_code(FILE *f,struct IC *p,struct Var *v,zmax offset)
            values were already fully pushed to their [sp+byte] slots
            by earlier PUSH ICs before this CALL IC runs. The
            hardware's REGISTER-DIRECT call form -- "call rp1",
-           confirmed in shared/Opcodes.h as a distinct row from the
+           confirmed in nec78k3_opcodes.h as a distinct row from the
            register-INDIRECT "call [rp1]" form (OP_RP1_2 vs
-           OP_RP1P_2), and shared/RegisterNames.h's REGNAMES_RP1 table
+           OP_RP1P_2), and nec78k3_regnames.h's REGNAMES_RP1 table
            confirms "de" is a valid rp1 operand -- calls the address
            the register holds directly; "call [de]" would wrongly
            dereference AGAIN, same mistake as the load_word() route. */

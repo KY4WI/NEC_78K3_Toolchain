@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NEC78K3_ADDRESSING_H
+#define NEC78K3_ADDRESSING_H
 
 /* Short-direct (saddr/saddrp) and special-function-register (sfr/sfrp)
  * address math for the NEC 78K/III core.
@@ -15,7 +16,7 @@
  * offset field taken directly out of the instruction encoding.
  */
 
-#include "Types.h"
+#include "nec78k3_types.h"
 
 /* ---- saddr (OT_SADDR / OT_SADDRP / OT_SADDRPP, and the destination of
  * the two-saddr forms, which sits in the instruction's third byte) ----
@@ -74,3 +75,5 @@ static byte sfr_byte_from_addr(uint16 addr)
 {
 	return (byte)(addr & 0xff);
 }
+
+#endif /* NEC78K3_ADDRESSING_H */

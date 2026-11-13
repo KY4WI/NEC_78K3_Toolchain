@@ -1,9 +1,10 @@
-#pragma once
+#ifndef NEC78K3_OPCODES_H
+#define NEC78K3_OPCODES_H
 
-#include "Types.h"
-#include "Mnemonic.h"
-#include "Operand.h"
-#include "Opcode.h"
+#include "nec78k3_types.h"
+#include "nec78k3_mnemonic.h"
+#include "nec78k3_operand.h"
+#include "nec78k3_opcode.h"
 
 /* Opcode values are hexadecimal for ISO C99 portability. Binary comments
  * retain useful bitfield and mask information for instruction encoding. */
@@ -516,3 +517,5 @@ static const Opcode opps[] = {
 };
 
 #define OPPS_COUNT (sizeof(opps) / sizeof(opps[0]))
+
+#endif /* NEC78K3_OPCODES_H */

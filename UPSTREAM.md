@@ -12,7 +12,15 @@ The source trees of **vbcc**, **vasm**, and **vlink** belong to their original a
 
 `patches/vasm-std-78k3.patch` touches exactly one upstream file, `syntax/std/syntax.c`, and makes one small change: the standard syntax parser already treats the apostrophe in Z80 alternate register names (for example `AF'`) as part of the operand instead of the start of a character literal. The 78K/3 also has primed alternate register names (`X'`, `AX'`, `BC'`, etc.), so the patch extends that existing Z80 treatment to `VASM_CPU_78K3`. The vasm maintainer reviewed this and found it acceptable.
 
-NEC's `byte.bit` operand syntax (`SET1 flags.3`, `BT sfr[EXIC0].7,label`, `MOV1 CY,flags.3`, `AND1 CY,/flags.3`) needs no frontend change: it is handled entirely inside `cpus/78k3/`. The byte operand's slot in the mnemonic table carries a flag (`otflags.h`), `parse_operand()` splits the `.bit` off and keeps it in the backend's operand structure, vasm's own `OPERAND_OPTIONAL` hook lets the separate bit-number operand be omitted, and the bit is moved into place just before encoding. The older two-operand forms (`SET1 flags,3`, `MOV1 CY.3,flags`) are still accepted.
+NEC's `byte.bit` operand syntax (`SET1 flags.3`, `BT sfr[EXIC0].7,label`, `MOV1 CY,flags.3`, `AND1 CY,/flags.3`) needs no frontend change: it is handled entirely inside `cpus/78k3/`. The byte operand's slot in the mnemonic table carries a flag (`nec78k3_otflags.h`), `parse_operand()` splits the `.bit` off and keeps it in the backend's operand structure, vasm's own `OPERAND_OPTIONAL` hook lets the separate bit-number operand be omitted, and the bit is moved into place just before encoding. The older two-operand forms (`SET1 flags,3`, `MOV1 CY.3,flags`) are still accepted.
+
+The backend directory `cpus/78k3/` is flat (only `*.c` and `*.h` files, no subdirectories, no `#pragma once`), so that a vasm distribution built from upstream's Makefile contains all of it. Its documentation is `vasm/doc/cpu_78k3.texi`, copied to `doc/` by `build.sh`. To list it in the manual, add to `doc/vasm.texi`:
+
+```
+@node 78K/III cpu module
+@chapter 78K/III cpu module
+@include cpu_78k3.texi
+```
 
 A separate `vasm/Makefile.78k3` provides the assembler build configuration without modifying upstream build rules. The backend's own version is defined in `cpu.c`. The distribution therefore has **just one patched file**.
 

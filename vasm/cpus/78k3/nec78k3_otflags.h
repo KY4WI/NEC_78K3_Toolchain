@@ -1,8 +1,8 @@
-/* otflags.h - flags ORed onto a mnemonics[] operand_type value.
+/* nec78k3_otflags.h - flags ORed onto a mnemonics[] operand_type value.
  *
  * Shared by cpu.c (which strips and acts on them in parse_operand()) and
  * the table generator gen_mnemonics.c (which adds them). The values sit
- * above every real OT_* value in shared/Operand.h, so they can never be
+ * above every real OT_* value in nec78k3_operand.h, so they can never be
  * mistaken for one.
  *
  * NEC writes the bit operand of a bit instruction as part of the byte it
@@ -15,8 +15,8 @@
  *   OTF_SLASH   (AND1/OR1 only) the operand must start with '/', which
  *               selects the ANDI1/ORI1 opcode rows: "and1 cy,/flags.3".
  */
-#ifndef OTFLAGS_H
-#define OTFLAGS_H
+#ifndef NEC78K3_OTFLAGS_H
+#define NEC78K3_OTFLAGS_H
 #define OTF_BITSFX 0x100
 #define OTF_SLASH  0x200
 #define OTF_MASK   (OTF_BITSFX | OTF_SLASH)

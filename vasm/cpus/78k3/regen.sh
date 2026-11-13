@@ -1,14 +1,14 @@
 #!/bin/sh
-# Regenerate mnemonics_gen.c from shared/Opcodes.h.
+# Regenerate mnemonics_gen.c from nec78k3_opcodes.h.
 #
 # Run this from cpus/78k3/ (or anywhere -- it cd's there itself) after any
-# change to shared/Opcodes.h, shared/Operand.h or shared/Mnemonic.h. It
+# change to nec78k3_opcodes.h, nec78k3_operand.h or nec78k3_mnemonic.h. It
 # compiles the small standalone host generator gen_mnemonics.c and runs it,
 # capturing its stdout as mnemonics_gen.c (its stderr is a one-line
 # included/excluded row-count summary, printed here too).
 #
 # NOTE: gen_mnemonics.c deliberately does NOT emit "#include \"vasm.h\"" or
-# "#include \"shared/Operand.h\"" into mnemonics_gen.c -- that file is
+# "#include \"nec78k3_operand.h\"" into mnemonics_gen.c -- that file is
 # #include'd directly from cpu.c, after cpu.c has already included both,
 # and vasm.h has no include guard (see cpu.c's own comment above its
 # "#include \"mnemonics_gen.c\"" line).
