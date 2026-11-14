@@ -4,12 +4,9 @@
 /* Short-direct (saddr/saddrp) and special-function-register (sfr/sfrp)
  * address math for the NEC 78K/III core.
  *
- * This is the SINGLE SOURCE OF TRUTH for these address<->byte transforms,
- * shared by both the disassembler (decode: byte -> address, for display)
- * and the vasm cpu backend (encode: address -> byte, for assembly). A
- * correction made here applies to both tools the next time they're
- * rebuilt, so "what the disassembler shows" and "what the assembler
- * would produce" can't silently drift apart.
+ * Encode direction only (address -> byte); the vasm backend never decodes.
+ * The NEC_78KIII_Disassembler project keeps its own copy with the decode
+ * functions added.
  *
  * All addresses are plain 16-bit CPU addresses (e.g. 0xFE20-0xFF1FH for
  * saddr, 0xFF00-0xFFFFH for sfr). All byte values are the raw 8-bit
@@ -22,17 +19,7 @@
  * the two-saddr forms, which sits in the instruction's third byte) ----
  * Offsets 20H-FFH are FE20H-FEFFH, offsets 00H-1FH are FF00H-FF1FH.
  * Range: FE20H-FF1FH, byte 0x00-0xFF. */
-static uint16 addr_from_saddr_byte(byte b)
-{
-	uint16 w = b;
-	if (b < 0x20)
-		w += 0xff00;
-	else
-		w += 0xfe00;
-	return w;
-}
-
-/* Inverse of addr_from_saddr_byte(). addr must be in FE20H-FF1FH; the
+/* addr must be in FE20H-FF1FH; the
  * caller is responsible for range-checking (the assembler side should
  * reject/flag an out-of-range saddr operand rather than silently
  * truncating it). */
@@ -52,11 +39,6 @@ static byte saddr_byte_from_addr(uint16 addr)
  * and TK-941 AB00 C17FH (38 F0 29) loads eeprom_addr FE29H from X inside
  * a 16-byte EEPROM write loop. An earlier bit-5/4 swap of this field is
  * gone: no code supports it. */
-static uint16 addr_from_saddr_fe_byte(byte b)
-{
-	return addr_from_saddr_byte(b);
-}
-
 static byte saddr_fe_byte_from_addr(uint16 addr)
 {
 	return saddr_byte_from_addr(addr);
@@ -66,11 +48,6 @@ static byte saddr_fe_byte_from_addr(uint16 addr)
  * Confirmed via the manual's Figure 4-7: a straight, ungated copy of the
  * offset byte into the low 8 bits of FF00H (no XOR network here -- only
  * the saddr window has that quirk, per the manual's own text). */
-static uint16 addr_from_sfr_byte(byte b)
-{
-	return (uint16)(0xff00u | b);
-}
-
 static byte sfr_byte_from_addr(uint16 addr)
 {
 	return (byte)(addr & 0xff);

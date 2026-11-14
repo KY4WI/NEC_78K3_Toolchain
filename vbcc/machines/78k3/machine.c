@@ -3789,8 +3789,6 @@ void gen_align(FILE *f,zmax al)
 
 void gen_var_head(FILE *f,struct Var *v)
 {
-  int constflag=0;
-  if(v->clist) constflag=is_const(v->vtyp);
   if(v->storage_class==STATIC){
     if(ISFUNC(v->vtyp->flags)) return;
     if(v->clist&&section!=DATA){emit(f,dataname);section=DATA;}

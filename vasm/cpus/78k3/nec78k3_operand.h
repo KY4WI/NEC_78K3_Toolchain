@@ -1,7 +1,6 @@
 #ifndef NEC78K3_OPERAND_H
 #define NEC78K3_OPERAND_H
 
-#include <stdbool.h>
 #include "nec78k3_types.h"
 
 typedef enum OperandType
@@ -93,7 +92,7 @@ typedef struct Operand
 	int byteOffset;
 	byte opMask;
 	byte opShift;
-	bool isMemMod;
+	int isMemMod;
 } Operand;
 
 #endif /* NEC78K3_OPERAND_H */

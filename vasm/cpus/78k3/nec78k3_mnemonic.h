@@ -115,6 +115,8 @@ typedef enum Mnemonic
 	M_DI
 } Mnemonic;
 
+#ifdef NEC78K3_WANT_MNEMONIC_NAMES
+/* Only gen_mnemonics.c needs the printable names; cpu.c does not. */
 static const char* mnemonic_names[] =
 {
 	"MOV",
@@ -228,5 +230,6 @@ static const char* mnemonic_names[] =
 	"EI",
 	"DI"
 };
+#endif /* NEC78K3_WANT_MNEMONIC_NAMES */
 
 #endif /* NEC78K3_MNEMONIC_H */

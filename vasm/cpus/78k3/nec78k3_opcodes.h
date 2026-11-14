@@ -6,8 +6,8 @@
 #include "nec78k3_operand.h"
 #include "nec78k3_opcode.h"
 
-/* Opcode values are hexadecimal for ISO C99 portability. Binary comments
- * retain useful bitfield and mask information for instruction encoding. */
+/* Opcode values are written in hexadecimal (ISO C has no binary literals).
+ * The binary comments keep the bitfield and mask information visible. */
 
 
 #define OP_UNK { OT_UNK, 0, 0, 0 }
@@ -42,7 +42,7 @@
 
 #define OP_MEM_S_1 { OT_MEM_S, 0, 0x07, 0 } /* field mask: 00000111 */
 
-#define OP_MEM_MOD { OT_MEM, 1, 0x70, 4, true } /* field mask: 01110000 */
+#define OP_MEM_MOD { OT_MEM, 1, 0x70, 4, 1 } /* field mask: 01110000 */
 
 #define OP_SADDRP_2 { OT_SADDRP, 1, 0xFF, 0 }
 #define OP_SADDRP_3 { OT_SADDRP, 2, 0xFF, 0 }
@@ -135,9 +135,9 @@ static const Opcode opps[] = {
 	{ M_MOV, 3, 0x38, 0xFF, 0, 0, OP_SADDR_3, OP_SADDR_FE_2 },
 	{ M_MOV, 2, 0x10, 0xFF, 0, 0, OP_A, OP_SFR_2 },
 	{ M_MOV, 2, 0x12, 0xFF, 0, 0, OP_SFR_2, OP_A },
-	{ M_MOV, 1, 0x58, 0xF8, 0, 0, OP_A, OP_MEM_S_1, true }, /* op bits: 01011000 / 11111000 */
+	{ M_MOV, 1, 0x58, 0xF8, 0, 0, OP_A, OP_MEM_S_1, 1 }, /* op bits: 01011000 / 11111000 */
 	{ M_MOV, 0, 0x00, 0xE0, 0x00, 0x8F, OP_A, OP_MEM_MOD }, /* op bits: 00000000 / 11100000; sub: 00000000 / 10001111 */
-	{ M_MOV, 1, 0x50, 0xF8, 0, 0, OP_MEM_S_1, OP_A, true }, /* op bits: 01010000 / 11111000 */
+	{ M_MOV, 1, 0x50, 0xF8, 0, 0, OP_MEM_S_1, OP_A, 1 }, /* op bits: 01010000 / 11111000 */
 	{ M_MOV, 0, 0x00, 0xE0, 0x80, 0x8F, OP_MEM_MOD, OP_A }, /* op bits: 00000000 / 11100000; sub: 10000000 / 10001111 */
 
 	{ M_MOV, 2, 0x18, 0xFF, 0, 0, OP_A, OP_SADDRPP_2 },	/* [[]] */
@@ -443,33 +443,33 @@ static const Opcode opps[] = {
 	{ M_BH , 3, 0x07, 0xFF, 0xFD, 0xFF, OP_ADDR16R_3, OP_NONE },
 	{ M_BNH, 3, 0x07, 0xFF, 0xFC, 0xFF, OP_ADDR16R_3, OP_NONE },
 
-	{ M_BT, 3, 0x70, 0xF8, 0, 0, OP_SADDR_2, OP_ADDR16R_3, false, OP_N_BIT_1 }, /* op bits: 01110000 / 11111000 */
-	{ M_BT, 4, 0x08, 0xFF, 0xB8, 0xF8, OP_SFR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
-	{ M_BT, 3, 0x03, 0xFF, 0xB8, 0xF8, OP_A, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
-	{ M_BT, 3, 0x03, 0xFF, 0xB0, 0xF8, OP_X, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10110000 / 11111000 */
-	{ M_BT, 3, 0x02, 0xFF, 0xB8, 0xF8, OP_PSWH, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
-	{ M_BT, 3, 0x02, 0xFF, 0xB0, 0xF8, OP_PSWL, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10110000 / 11111000 */
+	{ M_BT, 3, 0x70, 0xF8, 0, 0, OP_SADDR_2, OP_ADDR16R_3, 0, OP_N_BIT_1 }, /* op bits: 01110000 / 11111000 */
+	{ M_BT, 4, 0x08, 0xFF, 0xB8, 0xF8, OP_SFR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
+	{ M_BT, 3, 0x03, 0xFF, 0xB8, 0xF8, OP_A, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
+	{ M_BT, 3, 0x03, 0xFF, 0xB0, 0xF8, OP_X, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10110000 / 11111000 */
+	{ M_BT, 3, 0x02, 0xFF, 0xB8, 0xF8, OP_PSWH, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10111000 / 11111000 */
+	{ M_BT, 3, 0x02, 0xFF, 0xB0, 0xF8, OP_PSWL, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10110000 / 11111000 */
 
-	{ M_BF, 4, 0x08, 0xFF, 0xA0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
-	{ M_BF, 4, 0x08, 0xFF, 0xA8, 0xF8, OP_SFR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
-	{ M_BF, 3, 0x03, 0xFF, 0xA8, 0xF8, OP_A, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
-	{ M_BF, 3, 0x03, 0xFF, 0xA0, 0xF8, OP_X, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
-	{ M_BF, 3, 0x02, 0xFF, 0xA8, 0xF8, OP_PSWH, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
-	{ M_BF, 3, 0x02, 0xFF, 0xA0, 0xF8, OP_PSWL, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
+	{ M_BF, 4, 0x08, 0xFF, 0xA0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
+	{ M_BF, 4, 0x08, 0xFF, 0xA8, 0xF8, OP_SFR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
+	{ M_BF, 3, 0x03, 0xFF, 0xA8, 0xF8, OP_A, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
+	{ M_BF, 3, 0x03, 0xFF, 0xA0, 0xF8, OP_X, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
+	{ M_BF, 3, 0x02, 0xFF, 0xA8, 0xF8, OP_PSWH, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10101000 / 11111000 */
+	{ M_BF, 3, 0x02, 0xFF, 0xA0, 0xF8, OP_PSWL, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 10100000 / 11111000 */
 
-	{ M_BTCLR, 4, 0x08, 0xFF, 0xD0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
-	{ M_BTCLR, 4, 0x08, 0xFF, 0xD8, 0xF8, OP_SFR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
-	{ M_BTCLR, 3, 0x03, 0xFF, 0xD8, 0xF8, OP_A, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
-	{ M_BTCLR, 3, 0x03, 0xFF, 0xD0, 0xF8, OP_X, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
-	{ M_BTCLR, 3, 0x02, 0xFF, 0xD8, 0xF8, OP_PSWH, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
-	{ M_BTCLR, 3, 0x02, 0xFF, 0xD0, 0xF8, OP_PSWL, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
+	{ M_BTCLR, 4, 0x08, 0xFF, 0xD0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
+	{ M_BTCLR, 4, 0x08, 0xFF, 0xD8, 0xF8, OP_SFR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
+	{ M_BTCLR, 3, 0x03, 0xFF, 0xD8, 0xF8, OP_A, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
+	{ M_BTCLR, 3, 0x03, 0xFF, 0xD0, 0xF8, OP_X, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
+	{ M_BTCLR, 3, 0x02, 0xFF, 0xD8, 0xF8, OP_PSWH, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11011000 / 11111000 */
+	{ M_BTCLR, 3, 0x02, 0xFF, 0xD0, 0xF8, OP_PSWL, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11010000 / 11111000 */
 
-	{ M_BFSET, 4, 0x08, 0xFF, 0xC0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
-	{ M_BFSET, 4, 0x08, 0xFF, 0xC8, 0xF8, OP_SFR_3, OP_ADDR16R_4, false, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
-	{ M_BFSET, 3, 0x03, 0xFF, 0xC8, 0xF8, OP_A, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
-	{ M_BFSET, 3, 0x03, 0xFF, 0xC0, 0xF8, OP_X, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
-	{ M_BFSET, 3, 0x02, 0xFF, 0xC8, 0xF8, OP_PSWH, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
-	{ M_BFSET, 3, 0x02, 0xFF, 0xC0, 0xF8, OP_PSWL, OP_ADDR16R_3, false, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
+	{ M_BFSET, 4, 0x08, 0xFF, 0xC0, 0xF8, OP_SADDR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
+	{ M_BFSET, 4, 0x08, 0xFF, 0xC8, 0xF8, OP_SFR_3, OP_ADDR16R_4, 0, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
+	{ M_BFSET, 3, 0x03, 0xFF, 0xC8, 0xF8, OP_A, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
+	{ M_BFSET, 3, 0x03, 0xFF, 0xC0, 0xF8, OP_X, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
+	{ M_BFSET, 3, 0x02, 0xFF, 0xC8, 0xF8, OP_PSWH, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11001000 / 11111000 */
+	{ M_BFSET, 3, 0x02, 0xFF, 0xC0, 0xF8, OP_PSWL, OP_ADDR16R_3, 0, OP_N_BIT_2 }, /* subop bits: 11000000 / 11111000 */
 
 	{ M_DBNZ, 2, 0x32, 0xFE, 0, 0, OP_R2_1, OP_ADDR16R_2 }, /* op bits: 00110010 / 11111110 */
 	{ M_DBNZ, 3, 0x3B, 0xFF, 0, 0, OP_SADDR_2, OP_ADDR16R_3 },

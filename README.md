@@ -12,7 +12,6 @@
 | `vbcc/machines/78k3/` | New NEC 78K/3 C compiler backend |
 | `vbcc/machines/78k3/generated/` | Pre-generated `dt.h`/`dt.c` (see its own README) -- lets `build.sh` skip vbcc's interactive `dtgen` step |
 | `vasm/cpus/78k3/` | New NEC 78K/3 assembler backend and opcode tables |
-| `vasm/Makefile.78k3` | Additional 78K/3 assembler build configuration |
 | `patches/vasm-std-78k3.patch` | vasm parser change: alternate registers (`AX'`, `BC'`, etc.) |
 | `build.sh` | Extracts original vendor archives, installs the backends, applies the patch, and builds the three tools |
 | `upstream/` | Original **unmodified** vendor source archives and their checksums |
@@ -65,9 +64,9 @@ This is a **source build**, not an installer or a fully configured `vc` driver e
 
 ## Status, testing and limitations
 
-The 78K/3 backends have been used to generate code, but are not feature-complete. The assembler's opcode tables use standard C99 hexadecimal constants; binary comments retain useful field and mask layouts. A successful build or assembly does not guarantee correct output. Consult [backend known issues](vbcc/machines/78k3/BUGS.md), [testing notes](TESTING.md), and the comments in the backend sources. Support is aimed at the µPD78312-compatible subset currently being reverse engineered; compatibility across all 78K/III devices is **not** implied. The smoke-test linked output is not a bootable radio image; see [testing notes](TESTING.md) for a real-hardware test path.
+The 78K/3 backends have been used to generate code, but are not feature-complete. The assembler backend builds with vasm's stock Makefile (`-std=c90 -pedantic`); its opcode tables use hexadecimal constants, with binary comments for the field and mask layouts. A successful build or assembly does not guarantee correct output. Consult [backend known issues](vbcc/machines/78k3/BUGS.md), [testing notes](TESTING.md), and the comments in the backend sources. Support is aimed at the µPD78312-compatible subset currently being reverse engineered; compatibility across all 78K/III devices is **not** implied. The smoke-test linked output is not a bootable radio image; see [testing notes](TESTING.md) for a real-hardware test path.
 
-The assembler instruction tables (`vasm/cpus/78k3/nec78k3_*.h`; the backend directory is flat, as vasm's distribution Makefile only picks up `*.c`/`*.h` files directly inside a cpu directory) are self-contained copies synchronized with the separate reverse-engineering/disassembler project. No access to that project is required to build this repository.
+The assembler instruction tables (`vasm/cpus/78k3/nec78k3_*.h`; the backend directory is flat, as vasm's distribution Makefile only picks up `*.c`/`*.h` files directly inside a cpu directory) are self-contained copies, trimmed to what an assembler needs, of the tables in the separate disassembler project (kept in step by hand). No access to that project is required to build this repository.
 
 **Please report bugs.** Open an [issue](https://github.com/KY4WI/NEC_78K3_Toolchain/issues), including source input, the command line, expected behavior, actual output or diagnostic, host OS, and versions/checksums of the three upstream archives. A short failing case is more useful than a full firmware dump. Please **do not attach copyrighted Kenwood firmware or ROM images**.
 

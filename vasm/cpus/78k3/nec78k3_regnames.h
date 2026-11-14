@@ -3,11 +3,10 @@
 
 /* Register / fixed-token name tables for the NEC 78K/III core.
  *
- * Single source of truth for the text <-> field-value mapping used by
- * the disassembler's printer (OpcodeInstance.h, oi_print_reg_op() and
- * friends) and the vasm cpu backend's parse_operand()/eval_instruction().
- * Every table here was transcribed directly from OpcodeInstance.h's
- * existing, already-verified print logic -- nothing new was guessed.
+ * The text -> field-value mapping used by the vasm backend's
+ * parse_operand()/eval_instruction(). The tables follow the register
+ * printing of the NEC_78KIII_Disassembler and have been checked against it
+ * by round trip.
  *
  * Each table is a simple {name, value} list. reg_name_lookup() does a
  * case-insensitive exact-string match and returns the field value, or -1
@@ -106,19 +105,6 @@ static int reg_name_lookup(const RegNameEntry *tbl, size_t n,
 			return tbl[i].value;
 	}
 	return -1;
-}
-
-/* Reverse lookup (field value -> canonical name), used by anything that
- * still wants to print through this table rather than a local copy. */
-static const char *reg_name_from_value(const RegNameEntry *tbl, size_t n,
-                                        int value)
-{
-	size_t i;
-	for (i = 0; i < n; i++) {
-		if (tbl[i].value == value)
-			return tbl[i].name;
-	}
-	return NULL;
 }
 
 #endif /* NEC78K3_REGNAMES_H */

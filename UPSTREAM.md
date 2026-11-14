@@ -22,9 +22,9 @@ The backend directory `cpus/78k3/` is flat (only `*.c` and `*.h` files, no subdi
 @include cpu_78k3.texi
 ```
 
-A separate `vasm/Makefile.78k3` provides the assembler build configuration without modifying upstream build rules. The backend's own version is defined in `cpu.c`. The distribution therefore has **just one patched file**.
+The backend builds with vasm's stock Makefile (`make CPU=78k3 SYNTAX=std`); no build rule is modified. The backend's own version is defined in `cpu.c`. The distribution therefore has **just one patched file**.
 
-The assembler-specific Makefile uses ISO C99. Shared opcode bytes and masks are written in hexadecimal, with binary comments for significant bitfields; no GNU binary integer literals are required.
+The backend is ISO C90 (checked with the stock `-std=c90 -pedantic` flags). Opcode bytes and masks are written in hexadecimal, with binary comments for significant bitfields. `gen_mnemonics.c` is a host-side helper that regenerates `mnemonics_gen.c`; it is not part of the vasm build, and its header comment gives the regeneration commands.
 
 ## Provenance and release versions
 

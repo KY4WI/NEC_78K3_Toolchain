@@ -85,7 +85,6 @@ vlink_src="$(extract vlink "$vlink_archive")"
 say "Installing separately maintained NEC 78K/3 backends"
 cp -R "$ROOT/vbcc/machines/78k3" "$vbcc_src/machines/"
 cp -R "$ROOT/vasm/cpus/78k3" "$vasm_src/cpus/"
-cp "$ROOT/vasm/Makefile.78k3" "$vasm_src/Makefile.78k3"
 cp "$ROOT/vasm/doc/cpu_78k3.texi" "$vasm_src/doc/cpu_78k3.texi"
 
 # vbcc's own build generates objects/78k3/dt.{h,c} by running bin/dtgen,
@@ -119,7 +118,7 @@ say "Applying documented vasm standard-syntax parser patch"
 say "Building vbcc for the 78K/3"
 (cd "$vbcc_src" && mkdir -p bin objects && make TARGET=78k3 all)
 say "Building vasm for the 78K/3"
-(cd "$vasm_src" && mkdir -p obj && make -f Makefile.78k3 CPU=78k3 SYNTAX=std)
+(cd "$vasm_src" && mkdir -p obj && make CPU=78k3 SYNTAX=std)
 say "Building unmodified vlink"
 (cd "$vlink_src" && mkdir -p objects && make)
 

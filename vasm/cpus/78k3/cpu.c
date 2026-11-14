@@ -3,11 +3,9 @@
  * Instruction encoder for NEC 78K/III microcontrollers. See cpu.h for
  * the overall design note: this backend does not maintain its own copy
  * of the instruction set. The mnemonic table (mnemonics[]) is generated
- * by gen_mnemonics.c straight from nec78k3_opcodes.h -- the exact same
- * table nec78k3_disassembler.c decodes with -- and every address-math
- * helper (saddr/saddr_fe/sfr <-> byte) comes from nec78k3_addressing.h,
- * again shared verbatim with the disassembler. A fix made in either
- * shared header applies to both tools next rebuild.
+ * by gen_mnemonics.c straight from nec78k3_opcodes.h (derived from the
+ * table the NEC_78KIII_Disassembler decodes with), and the address-math
+ * helpers (saddr/saddr_fe/sfr -> byte) come from nec78k3_addressing.h.
  *
  * COVERAGE (see gen_mnemonics.c's stderr summary for the exact count):
  * every opps[] row is included EXCEPT rows using:
@@ -92,8 +90,8 @@ const char *cpuname = "78k3";
 int bytespertaddr = 2;
 
 /* mnemonic mnemonics[]; const int mnemonic_cnt; -- auto-generated from
- * nec78k3_opcodes.h, see gen_mnemonics.c. Regenerate with ./regen.sh
- * after any change to nec78k3_opcodes.h. */
+ * nec78k3_opcodes.h, see gen_mnemonics.c. Regenerate as described in
+ * gen_mnemonics.c after any change to nec78k3_opcodes.h. */
 #include "mnemonics_gen.c"
 
 /* ================= operand parsing ================= */
@@ -1611,8 +1609,11 @@ size_t instruction_size(instruction *ip, section *sec, taddr pc)
  * instead ("set1 flags.3" against the row "set1 saddr,n_bit"). */
 int cpu78k3_operand_optional(operand *p, int type)
 {
-  (void)p;
-  return type == OT_N_BIT;
+  if (type != OT_N_BIT)
+    return 0;
+  memset(p,0,sizeof(*p));   /* interface.texi: OPERAND_OPTIONAL also initialises op */
+  p->type = OT_N_BIT;
+  return 1;
 }
 
 /* Give a bit instruction its bit number. The row's bit-number operand

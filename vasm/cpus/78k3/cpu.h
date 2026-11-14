@@ -1,10 +1,10 @@
 /* cpu.h - NEC 78K/III (uPD78312A) cpu-description header for vasm
  *
  * The opcode table, operand-type enum and address math (nec78k3_opcodes.h,
- * nec78k3_operand.h, nec78k3_addressing.h) are the same as the standalone
- * NEC_78KIII_Disassembler's. They are separate copies, kept identical by
- * hand (only the mnemonic prefix and comments differ), so a fix to one
- * must be carried to the other.
+ * nec78k3_operand.h, nec78k3_addressing.h) originate from the standalone
+ * NEC_78KIII_Disassembler. The copies here are trimmed to what an
+ * assembler needs (no decode or print code) and are maintained by hand,
+ * so a table fix in one has to be carried to the other.
  */
 
 #define LITTLEENDIAN 1
